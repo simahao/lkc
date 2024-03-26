@@ -146,7 +146,6 @@ ssize_t do_generic_file_read(struct address_space *mapping, int user_dst, uint64
             pa = page_to_pa(page);
             // read_hit_cnt ++;// debug
             // printf("read hit : %d/%d\n",read_hit_cnt, read_cnt);// debug
-
         }
 
         // similar to fat32_inode_read
@@ -205,7 +204,6 @@ ssize_t do_generic_file_write(struct address_space *mapping, int user_src, uint6
     // static int write_cnt = 0;// debug
     // static int write_hit_cnt =0; // debug
     // static int read_from_disk_cnt = 0;// debug
-    
 
     struct inode *ip = mapping->host;
     ASSERT(n > 0);
@@ -265,7 +263,7 @@ ssize_t do_generic_file_write(struct address_space *mapping, int user_src, uint6
 #endif
             pa = page_to_pa(page);
             // write_hit_cnt++;
-            // printf("write hit : %d/%d\n", write_hit_cnt, write_cnt);// debug     
+            // printf("write hit : %d/%d\n", write_hit_cnt, write_cnt);// debug
         }
 
         // printf("write : %x\n", pa);
@@ -295,7 +293,7 @@ ssize_t do_generic_file_write(struct address_space *mapping, int user_src, uint6
         // set_page_flags(page, PG_dirty);// NOTE!!!
 
         acquire(&mapping->host->tree_lock);
-        radix_tree_tag_set(&mapping->page_tree, index, PAGECACHE_TAG_DIRTY);// NOTE!!!
+        radix_tree_tag_set(&mapping->page_tree, index, PAGECACHE_TAG_DIRTY); // NOTE!!!
         release(&mapping->host->tree_lock);
 
         // put and release (don't need it, maybe?)

@@ -158,8 +158,6 @@
 #define XTABS 0014000
 #endif
 
-
-
 struct termios {
     /// @brief 输入模式标志
     uint c_iflag;

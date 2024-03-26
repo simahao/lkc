@@ -184,8 +184,8 @@ void fat32_fat_bitmap_init(int dev, struct _superblock *sb) {
             int idx = BIT_INDEX(c, map_mini_size);
             int off = BIT_OFFSET(c, map_mini_size);
             if (fats[s] != FREE_MASK) {
-                SET_BIT(map_mini, off);   // set to
-                fat_table[c] = fats[s];   // copy fat table to memory
+                SET_BIT(map_mini, off); // set to
+                fat_table[c] = fats[s]; // copy fat table to memory
             } else {
                 CLEAR_BIT(map_mini, off); // set to 0
             }

@@ -127,7 +127,7 @@ void *kmalloc(size_t size) {
     // if(cnt == 4096) {
     //     printf("alloc, page cnt : 4096\n");
     // }
-    
+
     // if (cnt > 2)
     //     printfRed("kmalloc, page alloc : %d pages \n", cnt);
     return page_ret;
@@ -229,7 +229,7 @@ void kfree(void *pa) {
     // if(cnt == 4096) {
     //     printfBlue("free, page cnt : 4096\n");
     // }
-    
+
     buddy_free_pages(&mempools[id], page);
 }
 

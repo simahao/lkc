@@ -15,7 +15,7 @@ static long do_ioctl(struct file *filp, unsigned int cmd,
     }
 
 #include "termios.h"
-        extern struct termios term;
+    extern struct termios term;
     if (cmd == TCSETS) {
         struct termios newterm;
         // Log("hit sets");

@@ -37,7 +37,7 @@ void writeback_inodes(uint64 nr_to_write) {
     list_for_each_entry_safe(ip_cur, ip_tmp, &fat32_sb.s_dirty, dirty_list) {
         release(&fat32_sb.dirty_lock);
 
-        sema_wait(&ip_cur->i_sem);// important ??? maybe
+        sema_wait(&ip_cur->i_sem); // important ??? maybe
         int ret = sync_inode(ip_cur);
         sema_signal(&ip_cur->i_sem);
 

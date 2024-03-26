@@ -74,7 +74,6 @@ void main(uint64 hartid) {
         hartinit();
         debug_lock = 1;
 
-        
         //========== physical memory management ==========
         mm_init();
         //========== VMA management ==========
@@ -109,7 +108,6 @@ void main(uint64 hartid) {
 
         //========== global map ==========
         hash_tables_init();
-
 
         Info("========= Block device ==========\n");
         //========== block device ============

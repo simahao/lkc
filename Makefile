@@ -213,7 +213,9 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
 ## 5. Targets
 
 format:
-	clang-format -i $(filter %.c, $(SRCS)) $(shell find include -name "*.c" -o -name "*.h")
+	@which clang-format-15 > /dev/null 2>&1 || apt install -y clang-format-15
+# pml_hifive.h is not be formatted by clang-format
+	clang-format-15 -i $(filter %.c, $(SRCS)) $(filter-out include/platform/hifive/pml_hifive.h, $(shell find include -name "*.c" -o -name "*.h"))
 
 
 all: kernel-qemu image

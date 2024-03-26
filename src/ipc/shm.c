@@ -121,7 +121,7 @@ int newseg(struct ipc_namespace *ns, struct ipc_params *params) {
     // 	shp->shm_atim = shp->shm_dtim = 0;
     // 	shp->shm_ctim = ktime_get_real_seconds();
 
-    struct proc* p = proc_current();
+    struct proc *p = proc_current();
     shp->shm_segsz = size;
     shp->shm_nattch = 0;
     shp->shm_file = fp;

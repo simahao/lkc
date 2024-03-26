@@ -23,7 +23,7 @@
 #define NWATCH (NCPU)
 
 // The number of cycles to delay stores, whatever that means on qemu.
-//#define DELAY_CYCLES 20000
+// #define DELAY_CYCLES 20000
 #define DELAY_CYCLES 200000
 
 #define MAXTRACE 20

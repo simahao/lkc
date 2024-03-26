@@ -92,7 +92,6 @@ void *do_mmap(vaddr_t addr, size_t length, int prot, int flags, struct file *fp,
                         mm->heapvma = pos;
                     }
                 }
-                
             }
             if (vma != NULL) {
                 del_vma_from_vmspace(&mm->head_vma, vma);
@@ -108,7 +107,7 @@ void *do_mmap(vaddr_t addr, size_t length, int prot, int flags, struct file *fp,
         }
     }
     if (flags & MAP_ANONYMOUS || fp == NULL) {
-    // if (fp == NULL) {
+        // if (fp == NULL) {
         if (vma_map(mm, mapva, length, mkperm(prot, flags), VMA_ANON) < 0) {
             // sema_signal(&mm->mmap_sem);
             return MAP_FAILED;

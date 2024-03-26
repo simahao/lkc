@@ -154,7 +154,7 @@ int proc_join_thread(struct proc *p, struct tcb *t, char *name) {
 
     acquire(&t->p->mm->lock);
     // Log("thread idx is %d, within group %d", t->tidx, p->pid);
-    if ((t->trapframe = uvm_thread_trapframe(p->mm->pagetable, t->tidx)) == 0) {   
+    if ((t->trapframe = uvm_thread_trapframe(p->mm->pagetable, t->tidx)) == 0) {
         release(&t->p->mm->lock);
         return -1;
     }
@@ -168,7 +168,6 @@ int proc_join_thread(struct proc *p, struct tcb *t, char *name) {
     } else {
         strncpy(t->name, name, 20);
     }
-
 
     return 0;
 }
@@ -243,15 +242,15 @@ void thread_send_signal(struct tcb *t_cur, siginfo_t *info) {
 #ifdef __DEBUG_PROC__
     printfCYAN("tkill : kill thread %d, signo = %d\n", t_cur->tid, info->si_signo); // debug
 #endif
-    switch(info->si_signo) {
-        case SIGKILL:  
-        case SIGSTOP:
-            t_cur->killed = 1;
-            break;
-        default:
-            break;
+    switch (info->si_signo) {
+    case SIGKILL:
+    case SIGSTOP:
+        t_cur->killed = 1;
+        break;
+    default:
+        break;
     }
-    
+
     return;
 }
 
@@ -298,15 +297,15 @@ void do_tkill(struct tcb *t, sig_t signo) {
 }
 
 int do_sleep_ns(struct tcb *t, struct timespec ts) {
-//     uint64 interval_ns = TIMESEPC2NS(ts);
+    //     uint64 interval_ns = TIMESEPC2NS(ts);
 
-//     acquire(&cond_ticks.waiting_queue.lock);
-//     t->time_out = interval_ns;
-// // printf("from do_sleep_ns: hart = %d\n",cpuid());
-// // printf("t-time_out = %d\n",interval_ns);
-//     int wait_ret = cond_wait(&cond_ticks, &cond_ticks.waiting_queue.lock);
-//     release(&cond_ticks.waiting_queue.lock);
-//     return wait_ret;
+    //     acquire(&cond_ticks.waiting_queue.lock);
+    //     t->time_out = interval_ns;
+    // // printf("from do_sleep_ns: hart = %d\n",cpuid());
+    // // printf("t-time_out = %d\n",interval_ns);
+    //     int wait_ret = cond_wait(&cond_ticks, &cond_ticks.waiting_queue.lock);
+    //     release(&cond_ticks.waiting_queue.lock);
+    //     return wait_ret;
     return 0;
 }
 

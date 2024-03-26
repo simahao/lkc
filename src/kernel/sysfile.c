@@ -643,7 +643,6 @@ uint64 sys_dup3(void) {
 // - mode：文件的所有权描述。详见`man 7 inode `。
 // 返回值：成功执行，返回新的文件描述符。失败，返回-1。
 uint64 sys_openat(void) {
-
     char path[MAXPATH];
     int dirfd, flags, omode, fd;
     struct inode *ip;
@@ -661,7 +660,6 @@ uint64 sys_openat(void) {
     //     printf("ready\n");
     //     printfGreen("openat %s begin, mm: %d pages\n", path, get_free_mem()/4096);
     // }
-
 
     // 如果是要求创建文件，则调用 create
     if ((flags & O_CREAT) == O_CREAT) {
@@ -1428,13 +1426,13 @@ uint64 sys_statfs(void) {
     fs_stat.f_bsize = BSIZE;
     fs_stat.f_frsize = BSIZE;
     fs_stat.f_blocks = __TotSec;
-    fs_stat.f_bfree = __TotSec / 4;  // not important
+    fs_stat.f_bfree = __TotSec / 4; // not important
     fs_stat.f_files = NINODE;
     fs_stat.f_ffree = NINODE / 4;    // not important
     fs_stat.f_bavail = __TotSec / 4; // not important
     fs_stat.f_fsid.val[0] = 2;       // not important
     fs_stat.f_namelen = NAME_LONG_MAX;
-    fs_stat.f_flags = 0;             // not important
+    fs_stat.f_flags = 0; // not important
     // printfRed("%x", ustat_addr);
     struct proc *p = proc_current();
     if (copyout(p->mm->pagetable, ustat_addr, (char *)&fs_stat, sizeof(fs_stat)) < 0) { // rember add 1 for '\0'

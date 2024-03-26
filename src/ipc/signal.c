@@ -88,7 +88,7 @@ int signal_send(siginfo_t *info, struct tcb *t) {
         printf("signal_send : no space in heap\n");
         return 0;
     }
-    q->info = *info;          // !!!
+    q->info = *info; // !!!
     t->sig_pending_cnt++;
     INIT_LIST_HEAD(&q->list); // bug!!!
 
@@ -210,8 +210,8 @@ int do_sigaction(int sig, struct sigaction *act, struct sigaction *oact) {
         // 		t = next_thread(t);
         // 	} while (t != current);
         // }
-    // if(sig == SIGCANCEL)
-    //     printfRed("sigaction , tid : %d, signo : %d, address : %x\n", t->tid, sig, k->sa_handler); // debug
+        // if(sig == SIGCANCEL)
+        //     printfRed("sigaction , tid : %d, signo : %d, address : %x\n", t->tid, sig, k->sa_handler); // debug
 #ifdef __DEBUG_SIGNAL__
         printfRed("sigaction , tid : %d, signo : %d, address : %x\n", t->tid, sig, k->sa_handler); // debug
 #endif
@@ -320,7 +320,6 @@ int signal_frame_setup(sigset_t *set, struct trapframe *tf, struct rt_sigframe *
     return 0;
 }
 
-
 int signal_frame_restore(struct tcb *t, struct rt_sigframe *rtf) {
     struct ucontext uc;
     struct proc *p = proc_current();
@@ -333,10 +332,10 @@ int signal_frame_restore(struct tcb *t, struct rt_sigframe *rtf) {
     ucontext_t uc_riscv;
     if (copyin(p->mm->pagetable, (char *)&uc_riscv, (uint64)&rtf->uc_riscv, sizeof(ucontext_t)) != 0)
         return -1;
-    uint64 MC_PC = uc_riscv.uc_mcontext.__gregs[0];// for libc-test (pthread_cancel)
-    if(MC_PC) {
+    uint64 MC_PC = uc_riscv.uc_mcontext.__gregs[0]; // for libc-test (pthread_cancel)
+    if (MC_PC) {
         // printf("epc : %x\n", uc_riscv.uc_mcontext.__gregs[0]);
-        t->trapframe->epc = MC_PC; 
+        t->trapframe->epc = MC_PC;
     }
 #ifdef __DEBUG_SIGNAL__
     printfRed("sigreturn , tid : %d\n", t->tid);

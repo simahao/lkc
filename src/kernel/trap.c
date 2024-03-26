@@ -242,7 +242,7 @@ void thread_usertrapret() {
     // set up trapframe values that uservec will need when
     // the process next traps into the kernel.
 
-    t->trapframe->kernel_satp = r_satp();         // kernel page table
+    t->trapframe->kernel_satp = r_satp();                       // kernel page table
     t->trapframe->kernel_sp = t->kstack + KSTACK_PAGE * PGSIZE; // process's kernel stack
     t->trapframe->kernel_trap = (uint64)thread_usertrap;
     t->trapframe->hartid = r_tp(); // hartid for cpuid()

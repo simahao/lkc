@@ -10,7 +10,6 @@
 #include "memory/mm.h"
 #include "memory/pagefault.h"
 
-
 static uint32 perm_vma2pte(uint32 vma_perm) {
     uint32 pte_perm = 0;
     if (vma_perm & PERM_READ) {

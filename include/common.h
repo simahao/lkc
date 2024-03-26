@@ -101,9 +101,9 @@ extern struct devsw devsw[];
 #define CLOCK_TAI 11
 
 #if defined(SIFIVE_B) || defined(SIFIVE_U)
-    #define FREQUENCY 1000000 // The CPU real time clock (rtcclk) runs at 1 MHz and is driven from input pin RTCCLKIN
-#else 
-    #define FREQUENCY 12500000 // qemu时钟频率12500000
+#define FREQUENCY 1000000 // The CPU real time clock (rtcclk) runs at 1 MHz and is driven from input pin RTCCLKIN
+#else
+#define FREQUENCY 12500000 // qemu时钟频率12500000
 #endif
 
 #define TIME2SEC(time) (time / FREQUENCY)
@@ -116,13 +116,13 @@ extern struct devsw devsw[];
 #define NS_to_S(ns) (ns / (1000000000))
 #define S_to_NS(s) (s * 1UL * 1000000000)
 
-#define TIME2TIMESPEC(time)                                                       \
-    (struct timespec) {                                                           \
+#define TIME2TIMESPEC(time)                                               \
+    (struct timespec) {                                                   \
         .ts_sec = TIME2SEC(time), .ts_nsec = TIME2NS(time) % (1000000000) \
     }
 
-#define TIME2TIMEVAL(time)                                                 \
-    (struct timeval) {                                                     \
+#define TIME2TIMEVAL(time)                                             \
+    (struct timeval) {                                                 \
         .tv_sec = TIME2SEC(time), .tv_usec = TIME2US(time) % (1000000) \
     }
 struct timespec {

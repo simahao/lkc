@@ -406,10 +406,10 @@ uint64 socket_write(struct socket *sock, vaddr_t addr, int len) {
     int ret = 0;
     // TODO, fix len
     for (int i = 0; i < len; i++) {
-        if(sock->used == 0) {
+        if (sock->used == 0) {
             break;
         }
-        if(sock == NULL) {
+        if (sock == NULL) {
             break;
         }
         if (sbuf_full(&sock->sbuf)) {
@@ -431,10 +431,10 @@ uint64 socket_read(struct socket *sock, vaddr_t addr, int len) {
 
     int ret = 0;
     for (int i = 0; i < len; i++) {
-        if(sock->used == 0) {
+        if (sock->used == 0) {
             break;
         }
-        if(sock == NULL) {
+        if (sock == NULL) {
             break;
         }
         if (sbuf_empty(&sock->sbuf)) {
@@ -480,8 +480,6 @@ uint64 sys_sendto(void) {
     return socket_write(dstsock, addr, len);
 }
 
-
-
 //        ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags,
 //                  struct sockaddr *src_addr, socklen_t *addrlen);
 uint64 sys_recvfrom(void) {
@@ -500,16 +498,13 @@ uint64 sys_recvfrom(void) {
 
 // int setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen);
 uint64 sys_setsockopt(void) {
-
     return 0;
 }
 
 // int getsockopt(int sockfd, int level, int optname, void *optval, socklen_t *optlen);
 uint64 sys_getsockopt(void) {
-    
     return 0;
 }
-
 
 // //        int pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
 // //                      const struct timespec *timeout, const sigset_t *sigmask);

@@ -114,7 +114,7 @@ int pdflush_operation(void (*fn)(uint64), uint64 arg0) {
         ret = -1;
     } else {
         struct pdflush_work *pdf;
-        pdf = list_first_entry(pdflush_control.entry.next, struct pdflush_work, list); //从pdflush链表中取出第一项
+        pdf = list_first_entry(pdflush_control.entry.next, struct pdflush_work, list); // 从pdflush链表中取出第一项
 
         list_del_reinit(&pdf->list);
         if (list_empty(&pdflush_control.entry))

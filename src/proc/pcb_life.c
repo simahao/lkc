@@ -511,11 +511,11 @@ void do_exit(int status) {
         release(&p->lock);
     }
 
-// #include "termios.h"
-//     extern struct termios term;
-//     if (p->pid == 3) {
-//         term.c_lflag = 0xa;
-//     }
+    // #include "termios.h"
+    //     extern struct termios term;
+    //     if (p->pid == 3) {
+    //         term.c_lflag = 0xa;
+    //     }
     // !!!! =======atomic=======
     thread_sched();
     panic("do_exit should never return");

@@ -19,5 +19,4 @@ int fetchaddr(uint64, uint64 *);
 void syscall_count_analysis();
 void syscall();
 
-
 #endif

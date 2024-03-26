@@ -230,7 +230,7 @@ retry:
     if (fat_next == 0)
         goto retry;
 
-    free_num = fat_next;                                              // bug !!! 
+    free_num = fat_next; // bug !!!
     // printfRed("fat cluster : %x\n", free_num); // debug!
     // the first sector
 
@@ -368,7 +368,7 @@ uint32 fat32_cursor_to_offset(struct inode *ip, uint off, FAT_entry_t *c_start, 
     while (C_NUM_off > ip->fat32_i.cluster_cnt) {
         FAT_entry_t fat_new = fat32_cluster_alloc(ROOTDEV);
         // fat32_fat_set(*c_start, fat_new);
-        fat32_fat_cache_set(*c_start, fat_new);// using fat table in memory
+        fat32_fat_cache_set(*c_start, fat_new); // using fat table in memory
         *c_start = fat_new;
         ip->fat32_i.cluster_cnt++;
         ip->fat32_i.cluster_end = fat_new;
@@ -645,7 +645,7 @@ struct inode *fat32_inode_get(uint dev, struct inode *dp, const char *name, uint
     // sema_signal(&inode_table.lock);
 
     // printfGreen("get new, filename : %s\n", ip->fat32_i.fname); // debug
-    // printfGreen("mm: %d pages\n", get_free_mem()/4096); 
+    // printfGreen("mm: %d pages\n", get_free_mem()/4096);
     return ip;
 }
 
@@ -656,7 +656,7 @@ struct inode *fat32_inode_get(uint dev, struct inode *dp, const char *name, uint
 int fat32_fcb_copy(struct inode *dp, struct inode *ip) {
     // get fcb_char
     int str_len = strlen(ip->fat32_i.fname);
-    int off = ip->fat32_i.parent_off * 32;                   // unit of parent_off is 32 bytes
+    int off = ip->fat32_i.parent_off * 32; // unit of parent_off is 32 bytes
     ASSERT(off > 0);
     int long_dir_len = CEIL_DIVIDE(str_len, FAT_LFN_LENGTH); // 上取整
     int fcb_char_len = (long_dir_len + 1) * sizeof(dirent_l_t);
@@ -918,9 +918,9 @@ void fat32_inode_trunc(struct inode *ip) {
         // printfGreen("plus : cluster %x ++\n", iter_c_n); // debug!
         FAT_entry_t fat_next = fat32_ctl_index_table(ip, l_num + 1, 0); // lookup;
         // fat32_fat_set(iter_c_n, FREE_MASK);                             // bug like this : fat32_fat_set(iter_c_n, EOC);
-        fat32_fat_cache_set(iter_c_n, FREE_MASK);// using fat table in memory
-        fat32_bitmap_op(&fat32_sb, iter_c_n, 0);// clear
-        fat32_fat_cache_set(iter_c_n, FREE_MASK);// set to FREE
+        fat32_fat_cache_set(iter_c_n, FREE_MASK); // using fat table in memory
+        fat32_bitmap_op(&fat32_sb, iter_c_n, 0);  // clear
+        fat32_fat_cache_set(iter_c_n, FREE_MASK); // set to FREE
         iter_c_n = fat_next;
         l_num++;
     }
@@ -947,7 +947,7 @@ void fat32_inode_trunc(struct inode *ip) {
     ip->i_blocks = 0;
     ip->fat32_i.parent_off = -1; // ???
 
-    ip->i_hash = NULL;           // !!!
+    ip->i_hash = NULL; // !!!
 
     // speed up dirlookup
     ip->off_hint = 0;
@@ -1633,7 +1633,7 @@ int fat32_get_block(struct inode *ip, struct bio *bio_p, uint off, uint n, int a
             // iter_c_n = fat32_next_cluster(iter_c_n);
             iter_c_n = fat32_ctl_index_table(ip, l_num + 1, 0); // lookup
         }
-        l_num++;                                                // !!!
+        l_num++; // !!!
     }
     // bio_print(bio_p); // debug
 #ifdef __DEBUG_PAGE_CACHE__
@@ -1646,7 +1646,7 @@ int fat32_get_block(struct inode *ip, struct bio *bio_p, uint off, uint n, int a
 // similar to mpage_writepage
 void fat32_i_mapping_destroy(struct inode *ip) {
     struct address_space *mapping = ip->i_mapping;
-    acquire(&ip->tree_lock);     // !!!
+    acquire(&ip->tree_lock); // !!!
     if (mapping == NULL) {
         release(&ip->tree_lock); // !!!
         return;
@@ -1701,7 +1701,6 @@ void fat32_i_mapping_writeback(struct inode *ip) {
     // sema_wait(&ip->i_sem); // !!!! bug , must acquire this lock
     if (!list_empty_atomic(&ip->dirty_list, &ip->i_lock)) {
         // release(&inode_table.lock);
-
 
         release(&inode_table.lock);
         int ret = sync_inode(ip);
@@ -1944,7 +1943,7 @@ void fat32_find_same_name_cnt_handler(struct trav_control *tc) {
 }
 
 void alloc_fail(void) {
-    printfGreen("mm: %d pages before alloc fail\n", get_free_mem()/4096);
+    printfGreen("mm: %d pages before alloc fail\n", get_free_mem() / 4096);
 
     acquire(&inode_table.lock);
     struct inode *ip = NULL;
@@ -1982,15 +1981,13 @@ void alloc_fail(void) {
     // // free index table
     // fat32_free_index_table(ip);
 
-    printfGreen("mm: %d pages after alloc fail\n", get_free_mem()/4096);
+    printfGreen("mm: %d pages after alloc fail\n", get_free_mem() / 4096);
 
     release(&inode_table.lock);
-
-
 }
 
 void shutdown_writeback(void) {
-    printfGreen("mm: %d pages before writeback\n", get_free_mem()/4096);
+    printfGreen("mm: %d pages before writeback\n", get_free_mem() / 4096);
 
     acquire(&inode_table.lock);
     struct inode *ip = NULL;
@@ -2032,10 +2029,9 @@ void shutdown_writeback(void) {
     // // free index table
     // fat32_free_index_table(ip);
 
-    printfGreen("mm: %d pages after writeback\n", get_free_mem()/4096);
+    printfGreen("mm: %d pages after writeback\n", get_free_mem() / 4096);
     release(&inode_table.lock);
     fat32_fat_bitmap_writeback(ROOTDEV, &fat32_sb);
-
 }
 
 // get time string

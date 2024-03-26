@@ -75,7 +75,7 @@ void uart_hifive_putc_asyn(char ch) {
 void uart_hifive_putc_syn(char ch) {
     push_off();
 
-// #ifndef SIFIVE_B
+    // #ifndef SIFIVE_B
     if (panicked) {
         for (;;)
             ;
@@ -85,20 +85,20 @@ void uart_hifive_putc_syn(char ch) {
         ;
     }
     WriteReg_hifive(TXDATA, ch);
-// #else
+    // #else
     // sbi_putchar(ch);
-// #endif
+    // #endif
     pop_off();
 }
 
 int uart_hifive_getc() {
     // if (UART_RX_EMPTY(uarths))
     char ch = UART_RX_GETCHAR;
-    if(ch & RX_EMPTY_MASK)
+    if (ch & RX_EMPTY_MASK)
         return -1;
     else
         return ch;
-        // return UART_RX_GETCHAR(uarths);
+    // return UART_RX_GETCHAR(uarths);
 }
 
 // interfaces for upper layer

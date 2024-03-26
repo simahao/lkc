@@ -8,7 +8,7 @@
 #include "memory/allocator.h"
 #include "memory/memlayout.h"
 
-/* 
+/*
     ref =>
     >> https://sifive.cdn.prismic.io/sifive/1a82e600-1f93-4f41-b2d8-86ed8b16acba_fu740-c000-manual-v1p6.pdf
     >> https://suda-morris.github.io/2015/10/30/sd-card/
@@ -24,17 +24,17 @@ uint8 polltest(size_t *ptimer, uint8 tar, uint8 mask, char *msg) {
     volatile uint8 data;
     size_t timer = ptimer ? *ptimer : 1000;
     // int debug = 0;
-// if (strstr(msg,"cmd_read_mutiple_block: wait too long!")) debug = 1;
-// if (strstr(msg,"R3 wait too long")) debug = 1;
-// if (strstr(msg,"read_mutiple_block fail!")) debug = 1;
-// if (strstr(msg,"sd_single_write:write failed!")) debug = 1;
-// if (strstr(msg,"sd_multiple_write:write failed!")) debug = 1;
-// if (strstr(msg,"sd_single_write:busytest failed")) debug = 1;
-// if (strstr(msg,"sd_multiple_write:write all failed")) debug = 1;
-    
+    // if (strstr(msg,"cmd_read_mutiple_block: wait too long!")) debug = 1;
+    // if (strstr(msg,"R3 wait too long")) debug = 1;
+    // if (strstr(msg,"read_mutiple_block fail!")) debug = 1;
+    // if (strstr(msg,"sd_single_write:write failed!")) debug = 1;
+    // if (strstr(msg,"sd_multiple_write:write failed!")) debug = 1;
+    // if (strstr(msg,"sd_single_write:busytest failed")) debug = 1;
+    // if (strstr(msg,"sd_multiple_write:write all failed")) debug = 1;
+
     while (timer) {
         data = spi_read();
-// if (debug) printf("spi_read : 0x%x\n",data); 
+        // if (debug) printf("spi_read : 0x%x\n",data);
         if ((data & mask) == tar) {
             break;
         }
@@ -66,7 +66,6 @@ static struct sdcard_disk {
     struct spinlock lock_disk;
 } sdcard_disk;
 
-
 static void __sdcard_cmd(uint8 cmd, uint32 arg, uint8 crc) {
     ASSERT(cmd < 64);
 
@@ -87,8 +86,8 @@ int R1_response(uint8 *cmdix, uint8 *crc, uint8 *card_status) {
     int ret = 0;
     // do {
     //     data = spi_read();
-    // } while (data >= 0x40); // wait for b'00xx_xxxx 
-    data = polltest(NULL,0x00,0xC0, "R1 wait too long!");
+    // } while (data >= 0x40); // wait for b'00xx_xxxx
+    data = polltest(NULL, 0x00, 0xC0, "R1 wait too long!");
     *cmdix = data;
 
     for (int i = 3; i >= 0; --i) {
@@ -96,7 +95,7 @@ int R1_response(uint8 *cmdix, uint8 *crc, uint8 *card_status) {
     }
     crc7_end = spi_read();
     *crc = (crc7_end >> 1);
-    
+
     // ASSERT(crc == (crc7_end >> 1) );
     // ASSERT(crc7_end & 0x1 ); // end bit should be 1
 
@@ -122,13 +121,13 @@ int R3_response(uint8 *ocr) {
     // } while (data >= 0x40 && ( (data & 1) == RES_IX_IDLE) ); // wait for b'0000_0X01
     polltest(NULL, 0, 0xff, "R3 wait too long!");
 
-    for (int i = 3; i >= 0; --i) {  
+    for (int i = 3; i >= 0; --i) {
         ocr[i] = spi_read();
     }
 
     int rc = 0;
-    if ( !(ocr[3] & 0x80) ) {    /* Power up status */ // 上电没完成时 第31位设置为0
-        rc = -1;                
+    if (!(ocr[3] & 0x80)) { /* Power up status */ // 上电没完成时 第31位设置为0
+        rc = -1;
     }
 
     res_end = spi_read(); // b'1111_1111
@@ -146,13 +145,13 @@ int R3_response(uint8 *ocr) {
 }
 
 // 针对 CMD8 的响应
-int R7_response(uint8 *vhs, uint8* check_pattern, uint8 *crc) {
+int R7_response(uint8 *vhs, uint8 *check_pattern, uint8 *crc) {
     uint8 crc7_end;
     int ret = 0;
     // do {
     //     data = spi_read();
-    // } while (data >= 0x40); // wait for b'0000_1000; 
-    polltest(NULL,0x00,0xC0, "R7 wait too long!");
+    // } while (data >= 0x40); // wait for b'0000_1000;
+    polltest(NULL, 0x00, 0xC0, "R7 wait too long!");
 
     // ASSERT(data == 0x08);
 
@@ -203,7 +202,6 @@ int cmd_go_idle_state() {
         ret = -1;
     }
     return ret;
-
 }
 
 // CMD8
@@ -220,7 +218,7 @@ int cmd_send_if_cond() {
 
     __sdcard_cmd(cmd, arg, crc);
     ret = R7_response(&vhs, &check_pattern, &crc_ret);
-    if ( vhs == 1 && check_pattern == 0xAA ) {
+    if (vhs == 1 && check_pattern == 0xAA) {
         // ok
         ;
     } else {
@@ -254,8 +252,7 @@ int cmd_stop_transmission() {
     // while ( (data = spi_read()) >= 0x40 ) {    // wait for b'00xx_xxxx
     //     ;
     // }
-    polltest(NULL,0x00,0x80, "sdcard::cmd_stop_transmission: wait too long!");
-
+    polltest(NULL, 0x00, 0x80, "sdcard::cmd_stop_transmission: wait too long!");
 
     // ret = R1_response(&cmdix, &crc_ret, (uint8 *)&card_status); // is it ok ?
 
@@ -280,8 +277,8 @@ int cmd_set_blocklen(uint blksize) {
     __sdcard_cmd(cmd, arg, crc);
     ret = R1_response(&cmdix, &crc_ret, (uint8 *)&card_status);
 
-// printf("ret = %d\n",ret);
-// printf("cmdix = %d\n",cmdix);
+    // printf("ret = %d\n",ret);
+    // printf("cmdix = %d\n",cmdix);
 
     if ((cmdix & 0xC0) > RES_IX_IDLE) {
         ret = -1;
@@ -296,7 +293,7 @@ int cmd_read_single_block(uint sector) {
     const uint8 cmd = SD_CMD17;
     uint32 arg = sector;
     uint8 crc = gen_crc(cmd, arg);
-    
+
     int ret = 0;
     // uint8 cmdix;
     // uint32 card_status = 0;
@@ -306,8 +303,7 @@ int cmd_read_single_block(uint sector) {
     // while (spi_read() >= 0x40) {    // wait for b'00xx_xxxx
     //     ;
     // }
-    polltest(NULL,0x00,0x80, "sdcard::cmd_read_single_block: wait too long!");
-
+    polltest(NULL, 0x00, 0x80, "sdcard::cmd_read_single_block: wait too long!");
 
     // ret = R1_response(&cmdix, &crc_ret, (uint8 *)&card_status);
     // if ( cmdix > RES_IX_IDLE ) {
@@ -323,7 +319,7 @@ int cmd_read_mutiple_block(uint sector) {
     const uint8 cmd = SD_CMD18;
     uint32 arg = sector;
     uint8 crc = gen_crc(cmd, arg);
-    
+
     int ret = 0;
     // uint8 cmdix;
     // uint32 card_status = 0;
@@ -334,7 +330,7 @@ int cmd_read_mutiple_block(uint sector) {
     // while (spi_read() >= 0x40 && --timer) {     // wait for b'00xx_xxxx
     //     ;
     // }
-    polltest(NULL,0x00,0xC0, "sdcard::cmd_read_mutiple_block: wait too long!");
+    polltest(NULL, 0x00, 0xC0, "sdcard::cmd_read_mutiple_block: wait too long!");
 
     // ret = R1_response(&cmdix, &crc_ret, (uint8 *)&card_status);
 
@@ -354,7 +350,7 @@ int cmd_write_block(uint sector) {
     const uint8 cmd = SD_CMD24;
     uint32 arg = sector;
     uint8 crc = gen_crc(cmd, arg);
-    
+
     int ret = 0;
     // uint8 cmdix;
     // uint32 card_status = 0;
@@ -366,8 +362,7 @@ int cmd_write_block(uint sector) {
     // if (cmdix != 0) {
     //     ret = -1;
     // }
-    polltest(NULL,0x00,0xff, "sdcard::cmd_write_block: wait too long!");
-
+    polltest(NULL, 0x00, 0xff, "sdcard::cmd_write_block: wait too long!");
 
     return ret;
 }
@@ -378,7 +373,7 @@ int cmd_write_multiple_block(uint sector) {
     const uint8 cmd = SD_CMD25;
     uint32 arg = sector;
     uint8 crc = gen_crc(cmd, arg);
-    
+
     int ret = 0;
     // uint8 cmdix;
     // uint32 card_status = 0;
@@ -386,11 +381,11 @@ int cmd_write_multiple_block(uint sector) {
 
     __sdcard_cmd(cmd, arg, crc);
 
-    // while (spi_read() != 0x0) {    
+    // while (spi_read() != 0x0) {
     //     ;
     // }
-    polltest(NULL,0x00,0xff, "sdcard::cmd_write_multiple_block: wait too long!");
-    
+    polltest(NULL, 0x00, 0xff, "sdcard::cmd_write_multiple_block: wait too long!");
+
     // ret = R1_response(&cmdix, &crc_ret, (uint8 *)&card_status);
 
     // if (cmdix != 0) {
@@ -419,7 +414,7 @@ int cmd_app() {
 
     __sdcard_cmd(cmd, arg, crc);
     ret = R1_response(&cmdix, &crc_ret, (uint8 *)&card_status);
-    if ( cmdix != RES_IX_IDLE ) {
+    if (cmdix != RES_IX_IDLE) {
         ret = -1;
     }
 
@@ -428,7 +423,7 @@ int cmd_app() {
 
 // CMD58  R3 响应
 int cmd_read_ocr(uint8 *ccr) {
-// return 0;
+    // return 0;
     const uint8 cmd = SD_CMD58;
     uint32 arg = 0;
     uint8 crc = 0x7E;
@@ -440,12 +435,12 @@ int cmd_read_ocr(uint8 *ccr) {
     __sdcard_cmd(cmd, arg, crc);
     ret = R3_response((uint8 *)&ocr);
 
-// printf("cmd_read_ocr: ocr = 0x%x\n",ocr);
+    // printf("cmd_read_ocr: ocr = 0x%x\n",ocr);
     if ((int)ocr >= 0) {
         printf("[SD card] ERROR! 上电未完成!\n");
         ret = -1;
     } else {
-        if (ocr & (0x1 << 30)) {        // CCS bit
+        if (ocr & (0x1 << 30)) { // CCS bit
             *ccr = 1;
             printf("[SD card]It's SDHC or SDXC.大容量卡\n");
             ;
@@ -454,9 +449,8 @@ int cmd_read_ocr(uint8 *ccr) {
             printf("[SD card]It's SDSD. 小容量卡，<= 2GB\n");
         }
     }
-    
-    return ret;
 
+    return ret;
 }
 
 // CMD59  R1 响应
@@ -473,7 +467,7 @@ int cmd_crc_on_off(int on) {
 
     __sdcard_cmd(cmd, arg, crc);
     ret = R1_response(&cmdix, &crc_ret, (uint8 *)&card_status);
-    
+
     if (cmdix > RES_IX_IDLE) {
         ret = -1;
     }
@@ -499,7 +493,7 @@ int cmd_sd_send_op_cond() {
     // }
     // __sdcard_cmd(cmd, arg, crc);
     // // ret = R3_response((uint8*)&ocr);
-    
+
     // if ( (int)ocr < 0 ) {
     //     // ok, busy bit is 1
     //     // card initialization finished
@@ -507,7 +501,7 @@ int cmd_sd_send_op_cond() {
     // } else {
     //     ret = -1;
     // }
-    // return ret;   
+    // return ret;
 
     int rc;
     int timer = 100;
@@ -515,9 +509,9 @@ int cmd_sd_send_op_cond() {
         // 没有使用 R3 响应
         cmd_app();
         __sdcard_cmd(cmd, arg, crc);
-        rc = polltest(NULL,0x00,0x80, "cmd_sd_send_op_cond: wait response too long!");
+        rc = polltest(NULL, 0x00, 0x80, "cmd_sd_send_op_cond: wait response too long!");
         spi_write(0xff);
-        QSPI2_CSMODE = CSMODE_AUTO; 
+        QSPI2_CSMODE = CSMODE_AUTO;
     } while (rc == RES_IX_IDLE && --timer);
 
     if (!timer) panic("ACMD41 timeout!");
@@ -530,10 +524,10 @@ int cmd_sd_send_op_cond() {
 
 static int __sd_init() {
     // QSPI2_Init(2399200);
-printf("ready to enter QSPI2_Init...\n");
+    printf("ready to enter QSPI2_Init...\n");
 
     QSPI2_Init();
-printf("QSPI2_Init [ok]\n");
+    printf("QSPI2_Init [ok]\n");
 
     int timer = 100;
     // SD卡复位 CMD0
@@ -548,7 +542,7 @@ printf("QSPI2_Init [ok]\n");
 
     // 检测操作条件 CMD8
     timer = 100;
-    while (--timer && cmd_send_if_cond() < 0 ){
+    while (--timer && cmd_send_if_cond() < 0) {
         ;
     }
     if (!timer) {
@@ -556,8 +550,8 @@ printf("QSPI2_Init [ok]\n");
     } else {
         printf("SD card:cmd8 send_if_cond [ok]\n");
     }
-    
-    // 开启 CRC CMD59 
+
+    // 开启 CRC CMD59
     // timer = 100;
     // while (--timer && cmd_crc_on_off(1) < 0) {
     //     ;
@@ -569,9 +563,9 @@ printf("QSPI2_Init [ok]\n");
     //     printf("SD card:cmd59 crc_on_off [ok]\n");
     // }
 
-    // SD卡初始化 ACMD41 
+    // SD卡初始化 ACMD41
     timer = 10;
-    while (--timer && cmd_sd_send_op_cond() < 0 ){
+    while (--timer && cmd_sd_send_op_cond() < 0) {
         ;
     }
     if (!timer) {
@@ -584,7 +578,7 @@ printf("QSPI2_Init [ok]\n");
     timer = 100;
     uint8 ccs = 0;
 
-// #ifndef SIFIVE_U
+    // #ifndef SIFIVE_U
     while (--timer && cmd_read_ocr(&ccs) < 0) {
         ;
     }
@@ -595,7 +589,7 @@ printf("QSPI2_Init [ok]\n");
     } else {
         printf("SD card:cmd58 cmd_read_ocr [ok]\n");
     }
-// #endif
+    // #endif
 
     // 设置读写块长度 CMD16 (若为 SDHC或 SDXC则 block length is fixed to 512 Bytes)
     // if (!ccs) {
@@ -613,14 +607,13 @@ printf("QSPI2_Init [ok]\n");
     // 读取 CSD， 获取存储卡信息 CMD9
     // TODO()
     // QSPI2_SCKDIV = 60;
-    QSPI2_SCKDIV = 25;      // set the QSPI controller to 20 MHz
+    QSPI2_SCKDIV = 25; // set the QSPI controller to 20 MHz
 
-    for (int _ = 0; _ != 11; ++_) {;}
-    
+    for (int _ = 0; _ != 11; ++_) { ; }
+
     printf("The SD card is initialized\n");
     return 0;
 }
-
 
 void sdcard_disk_init() {
     __sd_init();
@@ -636,7 +629,7 @@ static void __sd_single_read(void *addr, uint sec) {
     pos = (uint8 *)addr;
     // int retry_ctr = 1;
     // int timer;
-// retry:
+    // retry:
     // 发送 CMD17
     cmd_read_single_block(sec);
     spi_write(0xff);
@@ -644,11 +637,11 @@ static void __sd_single_read(void *addr, uint sec) {
     // while ( --timer && cmd_read_single_block(sec) < 0) {
     //     ;
     // }
-    
+
     // QSPI2_CSMODE = CSMODE_HOLD;         // bugs!!!
 
     // 接收数据启始令牌 0xFE
-    polltest(NULL,0xFE,0xff,"sdcard single read fail!");
+    polltest(NULL, 0xFE, 0xff, "sdcard single read fail!");
 
     // 接收一个扇区的数据
     uint32 tot = BSIZE;
@@ -657,7 +650,7 @@ static void __sd_single_read(void *addr, uint sec) {
     while (tot-- > 0) {
         d = spi_read();
         *pos++ = d;
-        crc = crc16(crc,d);
+        crc = crc16(crc, d);
     }
     // crc16 = calculate_crc16(addr, BSIZE);
 
@@ -665,26 +658,24 @@ static void __sd_single_read(void *addr, uint sec) {
     uint16 crc16_ret;
     crc16_ret = (spi_read() << 8);
     crc16_ret |= spi_read();
-    
-    if (crc != crc16_ret ) {
+
+    if (crc != crc16_ret) {
         // if (retry_ctr-- > 0) {
         //     goto retry;
-        // } 
+        // }
         // else {
-            // panic("single read : crc error!");
-            printf("single read : crc error!\n");
+        // panic("single read : crc error!");
+        printf("single read : crc error!\n");
         // }
     }
 
     // 8 CLK 之后禁止片选 : （未处理）
-    for (int _ = 0; _ != 11; ++_) {;}
-
+    for (int _ = 0; _ != 11; ++_) { ; }
 
     // cmd_stop_transmission();
     spi_write(0xff);
     QSPI2_CSMODE = CSMODE_OFF;
-    
-    
+
     return;
 }
 // */
@@ -692,7 +683,7 @@ static void __sd_single_read(void *addr, uint sec) {
 static void __sd_multiple_read(void *addr, uint sec, uint nr_sec) {
     volatile uint8 *pos;
     pos = (uint8 *)addr;
-// printf("==> multiple_read %d\n",nr_sec);
+    // printf("==> multiple_read %d\n",nr_sec);
 
     // 发送 CMD18
     cmd_read_mutiple_block(sec);
@@ -703,14 +694,13 @@ static void __sd_multiple_read(void *addr, uint sec, uint nr_sec) {
     // if (!timer) panic("read_mutiple_block fail!");
     // QSPI2_CSMODE = CSMODE_HOLD;         // bugs!!!
 
-	// if (__sd_cmd(SD_CMD18, sec, gen_crc(SD_CMD18, sec)) != 0x00) {
+    // if (__sd_cmd(SD_CMD18, sec, gen_crc(SD_CMD18, sec)) != 0x00) {
     //     panic("...");
     // }
 
-
-    for ( int block_ctr = 0; block_ctr != nr_sec; ++block_ctr) {
+    for (int block_ctr = 0; block_ctr != nr_sec; ++block_ctr) {
         // 接收数据启始令牌 0xFE
-        polltest(NULL,0xFE,0xff,"read_mutiple_block fail!");
+        polltest(NULL, 0xFE, 0xff, "read_mutiple_block fail!");
 
         // 接收一个扇区的数据
         uint32 tot = BSIZE;
@@ -719,7 +709,7 @@ static void __sd_multiple_read(void *addr, uint sec, uint nr_sec) {
         while (tot-- > 0) {
             d = spi_read();
             *pos++ = d;
-            crc = crc16(crc,d);
+            crc = crc16(crc, d);
         }
         // crc16 = calculate_crc16(addr + BSIZE* block_ctr, BSIZE);
 
@@ -727,32 +717,29 @@ static void __sd_multiple_read(void *addr, uint sec, uint nr_sec) {
         uint16 crc16_ret;
         crc16_ret = (spi_read() << 8);
         crc16_ret |= spi_read();
-        
-        if (crc != crc16_ret ) {
+
+        if (crc != crc16_ret) {
             // sloppy handle
             // panic("sdcard multiple read fail!");
             printf("sdcard multiple read fail! crc error!\n");
         }
 
-        spi_write(0xff);    // 发送一字节的时钟, 挺重要的
+        spi_write(0xff); // 发送一字节的时钟, 挺重要的
     }
 
     // 发送 CMD12 停止命令
     cmd_stop_transmission();
 
-    polltest(NULL,0xFF,0xff,"cmd_stop_transmission keep busy!"); 
-
-
+    polltest(NULL, 0xFF, 0xff, "cmd_stop_transmission keep busy!");
 
     // 8 CLK 之后禁止片选 : （未处理）
-    for (int _ = 0; _ != 11; ++_) {;}
+    for (int _ = 0; _ != 11; ++_) { ; }
 
     spi_write(0xff);
     QSPI2_CSMODE = CSMODE_OFF;
 
+    // printf("<== multiple_read %d\n",nr_sec);
 
-// printf("<== multiple_read %d\n",nr_sec);
-    
     return;
 }
 
@@ -760,22 +747,21 @@ static void __sd_single_write(void *addr, uint sec) {
     volatile uint8 *pos;
     pos = (uint8 *)addr;
 
-
     // 发送 CMD24，收到 0x00 表示成功
     cmd_write_block(sec);
-    spi_write(0xff);        // 发送多个时钟
+    spi_write(0xff); // 发送多个时钟
 
     // timer = 10;
     // while (--timer && cmd_write_block(sec) < 0 ) {
     //     ;
     // }
     // if (!timer) panic("__sd_single_write failed!");
-    
+
     // for (int _ = 0; _ != 3; ++_) {
     //     spi_write(0xff);        // 发送多个时钟
     // }
 
-    // QSPI2_CSMODE = CSMODE_HOLD; 
+    // QSPI2_CSMODE = CSMODE_HOLD;
     // 发送写单块开始字节 0xFE
     spi_write(0xFE);
 
@@ -802,7 +788,7 @@ static void __sd_single_write(void *addr, uint sec) {
 static void __sd_multiple_write(void *addr, uint sec, uint nr_sec) {
     volatile uint8 *pos;
     pos = (uint8 *)addr;
-// printf("==> multiple_write %d\n",nr_sec);
+    // printf("==> multiple_write %d\n",nr_sec);
 
     // 发送 CMD25，收到 0x00 表示成功
     cmd_write_multiple_block(sec);
@@ -815,10 +801,10 @@ static void __sd_multiple_write(void *addr, uint sec, uint nr_sec) {
     // spi_write(0xff);        // 发送一个字节的时钟
 
     do {
-        // 发送若干时钟 
+        // 发送若干时钟
         // for (int _ = 0; _ != 10; ++_) { ; } // (也许这样可以)
-        spi_write(0xff);        // 发送一个字节的时钟
-        spi_write(0xff);        // 发送一个字节的时钟
+        spi_write(0xff); // 发送一个字节的时钟
+        spi_write(0xff); // 发送一个字节的时钟
 
         // 发送写多块开始字节 0xFC
         spi_write(0xFC);
@@ -848,14 +834,14 @@ static void __sd_multiple_write(void *addr, uint sec, uint nr_sec) {
     polltest(NULL, 0xFF, 0xff, "sd_multiple_write:write all failed!");
 
     QSPI2_CSMODE = CSMODE_AUTO; // 设置回 AUTO 模式
-// printf("<== multiple_write %d\n",nr_sec);
+                                // printf("<== multiple_write %d\n",nr_sec);
     return;
 }
 
 // extern int __sd_single_read(void * , uint );
-extern void dma_req(uint64 pa_des, uint64 pa_src, uint32 nr_bytes );
+extern void dma_req(uint64 pa_des, uint64 pa_src, uint32 nr_bytes);
 void sdcard_disk_read(void *addr, uint sec, uint nr_sec) {
-// printf("sd read %d \n",nr_sec);
+    // printf("sd read %d \n",nr_sec);
 
     // sema_wait(&sdcard_disk.mutex_disk);
     acquire(&sdcard_disk.lock_disk);
@@ -873,7 +859,7 @@ void sdcard_disk_read(void *addr, uint sec, uint nr_sec) {
 }
 
 void sdcard_disk_write(void *addr, uint sec, uint nr_sec) {
-// printf("sd write %d \n",nr_sec);
+    // printf("sd write %d \n",nr_sec);
 
     acquire(&sdcard_disk.lock_disk);
     if (nr_sec == 1) {
@@ -915,70 +901,68 @@ void disk_init() {
     sdcard_disk_init();
 }
 
-
-
 void __sd_test() {
-
     int sec = 0;
-        // just for test
+    // just for test
     // __sdRead(addr, sec, 2);
     printf("SD card I/O test ...\n");
 
     // 单块读写连续性测试
-    for ( int repeat = 1; repeat <= 114; ++repeat) {
+    for (int repeat = 1; repeat <= 114; ++repeat) {
         char addr[BSIZE] = {0};
         char data_tmp[BSIZE] = {0};
         // __sd_single_read(addr,sec);
         // __sd_single_read(addr,sec);
-        __sd_multiple_read(addr, sec,1);        // 填充进 addr
-        memmove(data_tmp,addr,BSIZE);
-        __sd_single_write(data_tmp,sec);
+        __sd_multiple_read(addr, sec, 1); // 填充进 addr
+        memmove(data_tmp, addr, BSIZE);
+        __sd_single_write(data_tmp, sec);
         // __sd_single_read(addr,sec);
-        __sd_multiple_read(addr, sec,1);        // 填充进 addr
-        ASSERT(!memcmp(addr, data_tmp,BSIZE));
-printf("No.%d [pass]\n",repeat);
+        __sd_multiple_read(addr, sec, 1); // 填充进 addr
+        ASSERT(!memcmp(addr, data_tmp, BSIZE));
+        printf("No.%d [pass]\n", repeat);
     }
 
     // 多块读写连续性测试
     // __sd_multiple_write(addr,sec,1024);     // seem to fail
 
     for (int nr_sec = 2; nr_sec <= 514; nr_sec *= 2) {
-        char *data_tmp = (char*)kzalloc(nr_sec * BSIZE);
-        char *addr = (char*)kzalloc(nr_sec * BSIZE);
+        char *data_tmp = (char *)kzalloc(nr_sec * BSIZE);
+        char *addr = (char *)kzalloc(nr_sec * BSIZE);
         ASSERT(data_tmp);
-        __sd_multiple_read(addr, sec,nr_sec);        // 填充进 addr
-printf("hit 1\n");            
-        memmove(data_tmp,addr,nr_sec*BSIZE);
-        __sd_multiple_write(data_tmp,sec,nr_sec);
-printf("hit 2\n");            
-        __sd_multiple_read(addr,sec,nr_sec);
-printf("hit 3\n");            
-        ASSERT(!memcmp(addr, data_tmp, nr_sec * BSIZE));       
-printf("compare [ok]\n");            
-        kfree(data_tmp);             // nr_sec = 512 时，运行到这里似乎会卡住
-printf("nr_sec = %d [pass]\n",nr_sec);
+        __sd_multiple_read(addr, sec, nr_sec); // 填充进 addr
+        printf("hit 1\n");
+        memmove(data_tmp, addr, nr_sec * BSIZE);
+        __sd_multiple_write(data_tmp, sec, nr_sec);
+        printf("hit 2\n");
+        __sd_multiple_read(addr, sec, nr_sec);
+        printf("hit 3\n");
+        ASSERT(!memcmp(addr, data_tmp, nr_sec * BSIZE));
+        printf("compare [ok]\n");
+        kfree(data_tmp); // nr_sec = 512 时，运行到这里似乎会卡住
+        printf("nr_sec = %d [pass]\n", nr_sec);
     }
 
     printf("SD card I/O test [ok]\n");
 
-// */ // end of sdcard I/O test
+    // */ // end of sdcard I/O test
 
-/*
-        // DMA 测试
-    {
-        char *data_tmp = (char*)kzalloc(nr_sec * BSIZE);
-        uint64 pa_des;
-        pa_des = (uint64)data_tmp;
-    
-#ifndef SIFIVE_U
-        sec *= BSIZE; 
-#endif
-        // pa_src = sec;
-        dma_req(pa_des,(uint64)addr,nr_sec * BSIZE);      // 内存 to 内存
+    /*
+            // DMA 测试
+        {
+            char *data_tmp = (char*)kzalloc(nr_sec * BSIZE);
+            uint64 pa_des;
+            pa_des = (uint64)data_tmp;
 
-        ASSERT(!memcmp(addr, data_tmp,BSIZE));
-        kfree(data_tmp);
-    }
-*/   // end DMA 测试
-        return;
+    #ifndef SIFIVE_U
+            sec *= BSIZE;
+    #endif
+            // pa_src = sec;
+            dma_req(pa_des,(uint64)addr,nr_sec * BSIZE);      // 内存 to 内存
+
+            ASSERT(!memcmp(addr, data_tmp,BSIZE));
+            kfree(data_tmp);
+        }
+    */
+    // end DMA 测试
+    return;
 }

@@ -282,7 +282,6 @@ extern struct _superblock fat32_sb;
 #define CLEAR_BIT(bitmap, pos) (bitmap &= ~(1 << pos))
 #define TEST_BIT(bitmap, pos) (bitmap & (1 << pos))
 
-
 // FAT32 Boot Record
 typedef struct FAT32_BootRecord {
     /*FAT common field*/

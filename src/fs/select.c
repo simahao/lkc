@@ -361,7 +361,6 @@ uint64 sys_pselect6(void) {
     return ret;
 }
 
-
 #define TICK_GRANULARITY 10L // ms
 #define SEC2TICK(sec) ((sec)*1000 / TICK_GRANULARITY)
 #define MS2TICK(ms) ((ms) / TICK_GRANULARITY)
