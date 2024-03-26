@@ -1,4 +1,16 @@
 #!/bin/bash
+# author:simahao
+# date: 2024/3/26
+# start linux with qemu
+
+if [[ $# -ge 3 ]]; then
+    echo "usage: run.sh <machine_type> <gdb>"
+    echo "machine_type: virt|sifive_u"
+    echo "e.g., run.sh                   start with sifive_u type"
+    echo "      run.sh virt              start with virt"
+    echo "      run.sh sifive_u gdb      start with sifive_u and support debug"
+    exit 1
+fi
 
 if [[ ! -f ./fat32.img ]]; then
     make image
@@ -18,4 +30,8 @@ else
 fi
 
 make clean
-make PLATFORM=${OPTION}
+if [[ $# == 2 && $2 == 'gdb' ]]; then
+    make PLATFORM=${OPTION} gdb
+else
+    make PLATFORM=${OPTION}
+fi
