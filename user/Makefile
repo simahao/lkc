@@ -7,7 +7,7 @@ SRCS=$(shell find src -name "*.c" -o -name "*.S")
 OBJS=$(addprefix $(BUILD)/, $(addsuffix .o, $(basename $(SRCS))))
 TARGET=$(addprefix $(FSIMG)/, $(basename $(notdir $(SRCS))))
 ARCHIVE=lib/lib.a
-CFLAGS+=-I$(ROOT)/$(User)/include
+CFLAGS+=-I$(ROOT)/$(USER)/include
 
 all: $(OBJS) $(TARGET)
 
@@ -27,7 +27,7 @@ include $(SCRIPTS)/rules.mk
 include $(SCRIPTS)/colors.mk
 
 
-$(FSIMG)/%: $(BUILD)/src/%.o $(ARCHIVE) 
+$(FSIMG)/%: $(BUILD)/src/%.o $(ARCHIVE)
 	@$(LD) $(LDFLAGS) -T src/user.ld -o $@ $^
 	@$(OBJDUMP) -S $@ > $(BUILD)/src/$*.asm
 	@$(OBJDUMP) -t $@ | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $(BUILD)/src/$*.sym

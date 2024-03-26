@@ -1,10 +1,9 @@
 ## 1. Basic
-.DEFAULT_GOAL=kernel
+.DEFAULT_GOAL = kernel
 
-# configuration ###############
+# ####### configuration #######
 # PLATFORM ?= qemu_virt
 PLATFORM ?= qemu_sifive_u
-# PLATFORM ?= board_sifive_u
 SUBMIT ?= 0
 ###############################
 
@@ -22,8 +21,8 @@ DEBUG_SIGNAL ?= 0
 DEBUG_FUTEX ?= 0
 DEBUG_THREAD ?= 0
 
-User = user
-oscompU = oscomp_user
+USER = user
+OSCOMPU = oscomp_user
 BUILD = build
 FSIMG = fsimg
 ROOT = $(shell pwd)
@@ -109,59 +108,60 @@ OBJS_KCSAN = \
 endif
 
 ifeq ($(DEBUG_LDSO), 1)
-CFLAGS += -D__DEBUG_LDSO__
+	CFLAGS += -D__DEBUG_LDSO__
 endif
 ifeq ($(STRACE), 1)
-CFLAGS += -D__STRACE__
+	CFLAGS += -D__STRACE__
 endif
 ifeq ($(LOCKTRACE), 1)
-CFLAGS += -D__LOCKTRACE__
+	CFLAGS += -D__LOCKTRACE__
 endif
 ifeq ($(DEBUG_PROC), 1)
-CFLAGS += -D__DEBUG_PROC__
+	CFLAGS += -D__DEBUG_PROC__
 endif
 ifeq ($(DEBUG_FS), 1)
-CFLAGS += -D__DEBUG_FS__
+	CFLAGS += -D__DEBUG_FS__
 endif
 ifeq ($(DEBUG_PAGE_CACHE), 1)
-CFLAGS += -D__DEBUG_PAGE_CACHE__
+	CFLAGS += -D__DEBUG_PAGE_CACHE__
 endif
 ifeq ($(DEBUG_SIGNAL), 1)
-CFLAGS += -D__DEBUG_SIGNAL__
+	CFLAGS += -D__DEBUG_SIGNAL__
 endif
 ifeq ($(DEBUG_PIPE), 1)
-CFLAGS += -D__DEBUG_PIPE__
+	CFLAGS += -D__DEBUG_PIPE__
 endif
 ifeq ($(DEBUG_RW), 1)
-CFLAGS += -D__DEBUG_RW__
+	CFLAGS += -D__DEBUG_RW__
 endif
 ifeq ($(DEBUG_FUTEX), 1)
-CFLAGS += -D__DEBUG_FUTEX__
+	CFLAGS += -D__DEBUG_FUTEX__
 endif
 ifeq ($(DEBUG_THREAD), 1)
-CFLAGS += -D__DEBUG_THREAD__
+	CFLAGS += -D__DEBUG_THREAD__
 endif
 ifeq ($(DEBUG_INODE), 1)
-CFLAGS += -D__DEBUG_INODE__
+	CFLAGS += -D__DEBUG_INODE__
 endif
 
 ifeq ($(SUBMIT), 1)
-CFLAGS += -DSUBMIT
+	CFLAGS += -DSUBMIT
 endif
 
 CFLAGS += -MD
-CFLAGS += -mcmodel=medany -march=rv64g -mabi=lp64f
+#CFLAGS += -mcmodel=medany -march=rv64g -mabi=lp64f
+CFLAGS += -mcmodel=medany -march=rv64gc -mabi=lp64d
 CFLAGS += -ffreestanding -fno-common -nostdlib -mno-relax
 CFLAGS += -I$(ROOT)/include
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
-ASFLAGS=$(CFLAGS)
+ASFLAGS = $(CFLAGS)
 
 # Disable PIE when possible (for Ubuntu 16.10 toolchain)
 ifneq ($(shell $(CC) -dumpspecs 2>/dev/null | grep -e '[^f]no-pie'),)
-CFLAGS += -fno-pie -no-pie
+	CFLAGS += -fno-pie -no-pie
 endif
 ifneq ($(shell $(CC) -dumpspecs 2>/dev/null | grep -e '[^f]nopie'),)
-CFLAGS += -fno-pie -nopie
+	CFLAGS += -fno-pie -nopie
 endif
 
 ## 3. File List
@@ -172,6 +172,7 @@ FILELIST_MK = $(shell find ./src -name "filelist.mk")
 include $(FILELIST_MK)
 
 # Filter out directories and files in blacklist to obtain the final set of source files
+# There are not files in blacklist, so SRCS=DIRS-y(*.c|*.S)
 DIRS-BLACKLIST-y += $(DIRS-BLACKLIST)
 SRCS-BLACKLIST-y += $(SRCS-BLACKLIST) $(shell find $(DIRS-BLACKLIST-y) -name "*.c" -o -name "*.S")
 SRCS-y += $(shell find $(DIRS-y) -name "*.c" -o -name "*.S")
@@ -180,34 +181,27 @@ SRCS = $(filter-out $(SRCS-BLACKLIST-y),$(SRCS-y))
 ##### PLATFORM ######
 
 ifeq ($(PLATFORM), qemu_virt)
-QEMUOPTS = -machine virt -bios bootloader/opensbi-qemu -kernel kernel-qemu -m 1G -smp 2 -nographic
-# QEMUOPTS = -machine virt -bios bootloader/opensbi-qemu -kernel kernel-qemu -m 128M -smp 1 -nographic
-ifeq ($(SUBMIT), 1)
-QEMUOPTS += -drive file=fat32.img,if=none,format=raw,id=x0
-else
-QEMUOPTS += -drive file=fat32.img,if=none,format=raw,id=x0
-endif
-QEMUOPTS += -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
-# CFLAGS += -DVIRT -DNCPU=1
-CFLAGS += -DVIRT -DNCPU=2
-# QEMUOPTS = -machine virt -kernel kernel-qemu -m 128M -nographic -smp 2 -bios sbi-qemu -drive file=sdcard.img,if=none,format=raw,id=x0  -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 -device virtio-net-device,netdev=net -netdev user,id=net -initrd initrd.img
+	QEMUOPTS = -machine virt -bios bootloader/opensbi-qemu -kernel kernel-qemu -m 1G -smp 2 -nographic
+	ifeq ($(SUBMIT), 1)
+# qemuopts += -drive file=fat32.img,if=none,format=raw,id=x0
+		QEMUOPTS += -drive file=sdcard.img,if=none,format=raw,id=x0
+	else
+		QEMUOPTS += -drive file=fat32.img,if=none,format=raw,id=x0
+	endif
+	QEMUOPTS += -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+	CFLAGS += -DVIRT -DNCPU=2
 endif
 
 ifeq ($(PLATFORM), qemu_sifive_u)
-QEMUOPTS = -machine sifive_u -bios bootloader/sbi-sifive -kernel kernel-qemu -m 1G -nographic
-QEMUOPTS += -smp 5
-ifeq ($(SUBMIT), 1)
-QEMUOPTS += -drive file=sdcard.img,if=sd,format=raw
-else
-QEMUOPTS += -drive file=fat32.img,if=sd,format=raw
+	QEMUOPTS = -machine sifive_u -bios bootloader/sbi-sifive -kernel kernel-qemu -m 1G -smp 5 -nographic
+	ifeq ($(SUBMIT), 1)
+		QEMUOPTS += -drive file=sdcard.img,if=sd,format=raw
+	else
+		QEMUOPTS += -drive file=fat32.img,if=sd,format=raw
+	endif
+	CFLAGS += -DSIFIVE_U -DNCPU=5
 endif
 
-CFLAGS += -DSIFIVE_U -DNCPU=5
-endif
-
-ifeq ($(PLATFORM), board_sifive_u)
-CFLAGS += -DSIFIVE_B -DNCPU=5
-endif
 
 # try to generate a unique GDB port
 GDBPORT = $(shell expr `id -u` % 5000 + 25000)
@@ -220,11 +214,6 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
 
 format:
 	clang-format -i $(filter %.c, $(SRCS)) $(shell find include -name "*.c" -o -name "*.h")
-
-# for submit
-# all: kernel-qemu
-# 	cp bootloader/opensbi-qemu ./sbi-qemu
-#	$(QEMU) $(QEMUOPTS)
 
 
 all: kernel-qemu image
@@ -241,7 +230,7 @@ gdb: kernel-qemu .gdbinit
 .gdbinit: .gdbinit.tmpl-riscv
 	sed "s/:1234/:$(GDBPORT)/" < $^ > $@
 
-export CC AS LD OBJCOPY OBJDUMP CFLAGS ASFLAGS LDFLAGS ROOT SCRIPTS User
+export CC AS LD OBJCOPY OBJDUMP CFLAGS ASFLAGS LDFLAGS ROOT SCRIPTS USER
 
 # image: user fat32.img
 image: user fat32.img
@@ -274,7 +263,7 @@ image: user fat32.img
 user: apps
 	@echo "$(YELLOW)build user:$(RESET)"
 	@cp README.md $(FSIMG)/
-	@make -C $(User)
+	@make -C $(USER)
 	@cp busybox/busybox $(FSIMG)/busybox
 	@mv $(BINFILE) $(FSIMG)/bin/
 	@mv $(BOOTFILE) $(FSIMG)/boot/
@@ -282,7 +271,7 @@ user: apps
 # @cp support/* $(FSIMG)/ -r
 
 oscomp:
-	@make -C $(oscompU) -e all CHAPTER=7
+	@make -C $(OSCOMPU) -e all CHAPTER=7
 
 fat32.img: dep
 	@dd if=/dev/zero of=$@ bs=1M count=1024
@@ -305,8 +294,8 @@ submit: image
 	@rm submit
 
 clean-all: clean
-	-@make -C $(User)/ clean
-	-@make -C $(oscompU)/ clean
+	-@make -C $(USER)/ clean
+	-@make -C $(OSCOMPU)/ clean
 	-rm $(SCRIPTS)/mkfs fs.img fat32.img $(FSIMG)/* -rf
 
 clean:
@@ -319,5 +308,3 @@ include $(SCRIPTS)/build.mk
 
 ## 7. misc
 include $(SCRIPTS)/colors.mk
-# test:
-#     $(foreach var,$(.VARIABLES),$(info $(var) = $($(var))))
