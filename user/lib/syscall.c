@@ -212,12 +212,12 @@ int dup2(int old, int new){
 
 int mount(const char *special, const char *dir, const char *fstype, unsigned long flags, const void *data)
 {
-        return syscall(SYS_mount, special, dir, fstype, flags, data);
+    return syscall(SYS_mount, special, dir, fstype, flags, data);
 }
 
 int umount(const char *special)
 {
-        return syscall(SYS_umount2, special, 0);
+    return syscall(SYS_umount2, special, 0);
 }
 
 /* above is the oscomp's required syscall, don't modify, add new syscall below */
@@ -252,7 +252,7 @@ int sysinfo(struct sysinfo *info) {
 int rt_sigaction(int signum, const struct sigaction *act, struct sigaction *oldact, size_t sigsetsize) {
     return syscall(SYS_rt_sigaction, signum, act, oldact, sigsetsize);
 }
-    // => fs  
+    // => fs
 ssize_t writev(int fd, const struct iovec *iov, int iovcnt) {
     return syscall(SYS_writev, fd, iov, iovcnt);
 }
@@ -273,7 +273,7 @@ int statfs(const char *path, struct statfs *buf) {
     return syscall(SYS_statfs, path, buf);
 }
 
-int renameat2(int olddirfd, const char *oldpath, 
+int renameat2(int olddirfd, const char *oldpath,
             int newdirfd, const char *newpath, unsigned int flags) {
     return syscall(SYS_renameat2, olddirfd, oldpath, newdirfd, newpath, flags);
 }

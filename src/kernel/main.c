@@ -58,10 +58,6 @@ void main(uint64 hartid) {
     if (first_core == 1) {
         first_core = 0;
         first_hartid = hartid;
-        // int status[10] = {0};
-        // for (int i = 0; i < NCPU; i++) {
-        //     status[i] = sbi_hart_get_status(i);
-        // }
 
         Info("========= Character device ==========\n");
         //========== console ============

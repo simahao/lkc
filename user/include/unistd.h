@@ -66,7 +66,7 @@ int clock_gettime(clockid_t clockid, struct timespec *tp);
 int sysinfo(struct sysinfo *info);
 int rt_sigaction(int signum, const struct sigaction *act, struct sigaction *oldact, size_t sigsetsize);
 
-    // => fs
+// => fs
 ssize_t writev(int fd, const struct iovec *iov, int iovcnt);
 ssize_t readv(int fd, const struct iovec *iov, int iovcnt);
 off_t lseek(int fd, off_t offset, int whence);

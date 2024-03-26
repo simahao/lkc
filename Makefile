@@ -225,8 +225,8 @@ kernel: kernel-qemu
 	$(QEMU) $(QEMUOPTS)
 
 gdb: kernel-qemu .gdbinit
-	@echo "$(RED)*** Please make sure to execute 'make image' before attempting to run gdb!!!$(RESET)" 1>&2
-	@echo "*** Now run 'gdb' in another window." 1>&2
+	@echo "$(RED)*** Please make sure to execute 'make image' before attempting to run gdb$(RESET)" 1>&2
+	@echo "*** Now run 'gdb' in another window" 1>&2
 	$(QEMU) $(QEMUOPTS) -S $(QEMUGDB)
 
 .gdbinit: .gdbinit.tmpl-riscv
