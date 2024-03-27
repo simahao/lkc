@@ -229,7 +229,7 @@ gdb: kernel-qemu .gdbinit
 	@echo "*** Now run 'gdb' in another window" 1>&2
 	$(QEMU) $(QEMUOPTS) -S $(QEMUGDB)
 
-.gdbinit: .gdbinit.tmpl-riscv
+.gdbinit: .gdbinit.tmp-riscv
 	sed "s/:1234/:$(GDBPORT)/" < $^ > $@
 
 export CC AS LD OBJCOPY OBJDUMP CFLAGS ASFLAGS LDFLAGS ROOT SCRIPTS USER
