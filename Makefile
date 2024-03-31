@@ -31,7 +31,7 @@ GENINC = include/syscall_gen
 $(shell mkdir -p $(GENINC))
 MNT_DIR = build/mnt
 $(shell mkdir -p $(MNT_DIR))
-$(shell mkdir mount_sd) # for sdcard.img
+$(shell mkdir -p mount_sd) # for sdcard.img
 
 # Initial file in directory, cp these test utilities into fsimg/test
 TEST=user_test kalloctest mmaptest \
