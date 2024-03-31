@@ -11,10 +11,9 @@ void print_sysinfo() {
         printf("error : sysinfo\n");
     // printf("Uptime: %d seconds\n", info.uptime);
     // printf("Total RAM: %d bytes\n", info.totalram);
-    printf("Free RAM: %d PAGES, %d Bytes\n", info.freeram/4096, info.freeram);
+    printf("Free RAM: %d PAGES, %d Bytes\n", info.freeram / 4096, info.freeram);
     // printf("Number of processes: %d\n", info.procs);
 }
-
 
 // Test that fork fails gracefully.
 void forktest(void) {
@@ -122,7 +121,7 @@ void exitwait() {
                 printf("wait wrong pid\n");
                 exit(1);
             }
-            if ((i<<8) != exit_state) {
+            if ((i << 8) != exit_state) {
                 printf("%d %d %d\n", i, exit_state, WEXITSTATUS(pid));
                 printf("wait wrong exit status\n");
                 exit(1);
@@ -456,9 +455,9 @@ void preempt() {
     }
     if (pid1 == 0) {
         for (;;)
-        ;
+            ;
     }
-        
+
     pid2 = fork();
     if (pid2 < 0) {
         printf("fork failed\n");
@@ -468,7 +467,7 @@ void preempt() {
         for (;;)
             ;
     }
-        
+
     pipe(pfds);
     pid3 = fork();
     if (pid3 < 0) {
@@ -485,7 +484,7 @@ void preempt() {
     }
 
     close(pfds[1]);
-    int n=0;
+    int n = 0;
     if ((n = read(pfds[0], buf, sizeof(buf))) != 1) {
         printf("%s %d\n", buf, n);
         printf("preempt read error");
@@ -1290,11 +1289,11 @@ void createdelete() {
             name[1] = '0' + i;
             fd = open(name, 0);
             if ((i == 0 || i >= N / 2) && fd < 0) {
-                printf("i : %d, fd : %d\n",i, fd);
+                printf("i : %d, fd : %d\n", i, fd);
                 printf("oops createdelete %s didn't exist\n", name);
                 exit(1);
             } else if ((i >= 1 && i < N / 2) && fd >= 0) {
-                printf("i : %d, fd : %d\n",i, fd);
+                printf("i : %d, fd : %d\n", i, fd);
                 printf("oops createdelete %s did exist\n", name);
                 exit(1);
             }
@@ -1563,7 +1562,7 @@ void textwrite() {
         exit(1);
     }
     wait(&xstatus);
-    if (xstatus == (-1 << 8) ) // kernel killed child?: 位移运算优先级低，，要加括号！
+    if (xstatus == (-1 << 8)) // kernel killed child?: 位移运算优先级低，，要加括号！
     {
         printf("textwrite test OK\n");
     } else
@@ -1644,8 +1643,6 @@ void manywrites() {
             exit(0);
         }
     }
-
-
 
     for (int ci = 0; ci < nchildren; ci++) {
         int st = 0;
@@ -1888,7 +1885,7 @@ void sbrkmuch() {
     p = sbrk(amt);
     if (p != a) {
         print_sysinfo();
-        printf("p : %ld, a : %ld, amt : %ld\n",p, a, amt);
+        printf("p : %ld, a : %ld, amt : %ld\n", p, a, amt);
         printf("sbrk test failed to grow big address space; enough phys mem?\n");
         exit(1);
     }
@@ -2226,7 +2223,7 @@ void stacktest() {
     pid = fork();
     if (pid == 0) {
         char *sp = (char *)r_sp();
-        sp -= 2*PGSIZE;
+        sp -= 2 * PGSIZE;
         // the *sp should cause a trap.
         printf("stacktest: read below stack %p\n", *sp);
         exit(1);
@@ -2495,7 +2492,6 @@ void cowtest() {
     printf("ALL COW TESTS PASSED\n");
 }
 
-
 void stressfs() {
     int fd, i;
     char path[] = "stressfs0";
@@ -2527,7 +2523,6 @@ void stressfs() {
     wait(0);
     printf("stressfs test OK\n");
 }
-
 
 void copyinstr3() {
     printf("==========copyinstr3 test==========\n");
@@ -2565,7 +2560,6 @@ void copyinstr3() {
     }
     printf("copyinstr3 test OK\n");
 }
-
 
 void subdir() {
     int fd, cc;
@@ -2640,7 +2634,6 @@ void subdir() {
         printf("chdir ./.. failed\n");
         exit(1);
     }
-
 
     if (open("dd/dd/ff", O_RDONLY) >= 0) {
         printf("open (unlinked) dd/dd/ff succeeded!\n");
@@ -2763,7 +2756,6 @@ void dirfile() {
     printf("dirfile test OK\n");
 }
 
-
 int main(void) {
     // ==== process =====
     // print_sysinfo();
@@ -2771,7 +2763,7 @@ int main(void) {
     // print_sysinfo();
     // exitwait();
     // print_sysinfo();
-    // forkfork();    
+    // forkfork();
     // print_sysinfo();
     // forkforkfork();
     // print_sysinfo();
@@ -2779,7 +2771,7 @@ int main(void) {
     // print_sysinfo();
     // reparent();
     // print_sysinfo();
-    // reparent2(); 
+    // reparent2();
     // print_sysinfo();
     // killstatus();
     // print_sysinfo();
@@ -2793,7 +2785,7 @@ int main(void) {
     print_sysinfo();
     writebig();
     print_sysinfo();
-    
+
     preempt();
     print_sysinfo();
     truncate1();
@@ -2814,7 +2806,7 @@ int main(void) {
     print_sysinfo();
 
     iputtest();
-    
+
     print_sysinfo();
     exitiputtest();
     print_sysinfo();
@@ -2833,7 +2825,7 @@ int main(void) {
     mem();
     print_sysinfo();
 
-    sharedfd();     // occur bug
+    sharedfd(); // occur bug
     print_sysinfo();
     createdelete();
     print_sysinfo();
@@ -2886,14 +2878,14 @@ int main(void) {
     stressfs();
     print_sysinfo();
 
-//     // TODO :
-//     // fsfull();
-//     // diskfull();
-//     // execveout();
-//     // fourteen();
-//     // unlinkread();
-//     // subdir();
-//     // dirfile();
+    //     // TODO :
+    //     // fsfull();
+    //     // diskfull();
+    //     // execveout();
+    //     // fourteen();
+    //     // unlinkread();
+    //     // subdir();
+    //     // dirfile();
 
     printf("ALL TESTS PASSED\n");
     exit(0);

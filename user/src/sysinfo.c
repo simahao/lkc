@@ -5,8 +5,7 @@
 #include "string.h"
 #include "stdlib.h"
 
-int main()
-{
+int main() {
     struct sysinfo info;
     if (sysinfo(&info) == -1)
         printf("error : sysinfo\n");

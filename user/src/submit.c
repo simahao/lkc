@@ -73,17 +73,13 @@ char *testpath[] = {
     "cyclictest_testcode.sh",
 };
 
-// char *testpath[] = {"./cyclictest_testcode.sh", "libc-bench"};
-// char *testpath[] = {"libctest_testcode.sh"};
-// char *testpath[] = {"unixbench_testcode.sh"};
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x) / sizeof((x)[0]))
 
 void runtest() {
     int pid;
-    
-    // while(1) {
+
     for (int i = 0; i < NELEM(testpath); i++) {
         pid = fork();
         if (pid < 0) {
@@ -102,5 +98,4 @@ void runtest() {
             }
         }
     }
-    // }
 }

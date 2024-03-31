@@ -33,12 +33,15 @@ MNT_DIR = build/mnt
 $(shell mkdir -p $(MNT_DIR))
 $(shell mkdir mount_sd) # for sdcard.img
 
-# Initial File in Directory
+# Initial file in directory, cp these test utilities into fsimg/test
 TEST=user_test kalloctest mmaptest \
 	clock_gettime_test signal_test \
 	writev_test readv_test lseek_test \
 	sendfile_test renameat2_test
+
+# utility in user dir, cp these binaries into fsimg/bin
 BIN=ls echo cat mkdir rawcwd rm shutdown wc kill grep sh sysinfo true
+# cp init into fsimg/boot
 BOOT=init
 
 TESTFILE = $(addprefix $(FSIMG)/, $(TEST))
@@ -69,7 +72,7 @@ $(shell mkdir -p $(FSIMG)/var/tmp)
 $(shell touch $(FSIMG)/var/tmp/lmbench)
 
 
-## 2. Compilation Flags
+## 2. Compilation flags
 
 # Try to infer the correct TOOLPREFIX if not set
 ifndef TOOLPREFIX
@@ -164,7 +167,7 @@ ifneq ($(shell $(CC) -dumpspecs 2>/dev/null | grep -e '[^f]nopie'),)
 	CFLAGS += -fno-pie -nopie
 endif
 
-## 3. File List
+## 3. File list
 
 # Include all filelist.mk to merge file lists
 FILELIST_MK = $(shell find ./src -name "filelist.mk")
@@ -305,8 +308,8 @@ clean:
 
 .PHONY: qemu clean user clean-all format test oscomp dep image apps mount umount submit
 
-## 6. Build Kernel
+## 6. Build kernel
 include $(SCRIPTS)/build.mk
 
-## 7. misc
+## 7. Misc
 include $(SCRIPTS)/colors.mk
