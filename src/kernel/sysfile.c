@@ -96,7 +96,6 @@ static struct inode *find_inode(char *path, int dirfd, char *name) {
         // 绝对路径 || 相对于当前路径，忽略 dirfd
         // acquire(&p->tlock);
         ip = (!name) ? namei(path) : namei_parent(path, name);
-        // printf("about to leave find_inode!\n");
         if (ip == 0) {
             // release(&p->tlock);
             return 0;
@@ -110,7 +109,6 @@ static struct inode *find_inode(char *path, int dirfd, char *name) {
         // acquire(&p->tlock);
         if (dirfd < 0 || dirfd >= NOFILE || (f = p->ofile[dirfd]) == 0) {
             // release(&p->tlock);
-            // printf("about to leave find_inode!\n");
             return 0;
         }
         struct inode *oldcwd = p->cwd;
@@ -118,16 +116,12 @@ static struct inode *find_inode(char *path, int dirfd, char *name) {
         ip = (!name) ? namei(path) : namei_parent(path, name);
         if (ip == 0) {
             // release(&p->tlock);
-
             p->cwd = oldcwd;
-            // printf("about to leave find_inode!\n");
             return 0;
         }
         p->cwd = oldcwd;
         // release(&p->tlock);
     }
-
-    // printf("about to leave find_inode!\n");
     return ip;
 }
 
@@ -183,6 +177,7 @@ static struct inode *assist_icreate(char *path, int dirfd, uint16 type, short ma
     if ((dp = find_inode(path, dirfd, name)) == 0) {
         return 0;
     }
+    // printf("icreate:187");
     ASSERT(dp->i_op);
     // dp->i_op->ilock(dp); // no need to lock dp !
     ip = dp->i_op->icreate(dp, name, type, major, minor); // don't check, caller will do this
@@ -652,23 +647,27 @@ uint64 sys_openat(void) {
         return -1;
     }
     argint(2, &flags);
+    // printf("\nargint:%d\n", flags);
     flags = flags & (~O_LARGEFILE); // bugs!!
+    // printf("\nafter largefile, dec:%d, hex:%#X\n", flags, flags);
 
     argint(3, &omode);
 
-    // if(!strncmp(path, "/etc/localtime", 14)) {
-    //     printf("ready\n");
-    //     printfGreen("openat %s begin, mm: %d pages\n", path, get_free_mem()/4096);
-    // }
 
     // 如果是要求创建文件，则调用 create
+    // printf("\no_creat, dec:%d, hex:%#x\n", O_CREAT, O_CREAT);
+    // printf("\nbefore create judge, dec:%d,hex:%#X\n", flags&O_CREAT, flags&O_CREAT);
     if ((flags & O_CREAT) == O_CREAT) {
         if ((ip = assist_icreate(path, dirfd, S_IFREG, 0, 0)) == 0) {
+            printf("openat:669\n");
             return -1;
         }
     } else {
         // 否则，我们先调用 find_inode 找到 path 对应的文件 inode 节点
         if ((ip = find_inode(path, dirfd, 0)) == 0) {
+            if (strcmp(path, "/dev/tty") != 0) {
+                printf("not create mode,find inode,no result, path=%s,dirfd=%d\n", path, dirfd);
+            }
             return -1;
         }
         // ASSERT(ip->i_op);
@@ -679,6 +678,7 @@ uint64 sys_openat(void) {
         // }
 
         if (((flags & O_DIRECTORY) == O_DIRECTORY) && !S_ISDIR(ip->i_mode)) {
+            printf("openat:686, mode: %d, path=%s\n", ip->i_mode, path);
             ip->i_op->iunlock_put(ip);
             return -1;
         }
@@ -686,6 +686,7 @@ uint64 sys_openat(void) {
 
     if ((S_ISCHR(ip->i_mode) || S_ISBLK(ip->i_mode))
         && (MAJOR(ip->i_rdev) < 0 || MAJOR(ip->i_rdev) >= NDEV)) {
+        printf("openat:694\n");
         ip->i_op->iunlock_put(ip);
         return -1;
     }

@@ -27,7 +27,7 @@ void plicinithart(void) {
     // set this hart's S-mode priority threshold to 0.
     *(uint32 *)PLIC_SPRIORITY(hart) = 0;
 
-    Info("cpu %d, plic is enable !!!\n", cpuid());
+    Info("cpu %d, plic is enable\n", cpuid());
 }
 
 // ask the PLIC what interrupt we should serve.

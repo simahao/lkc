@@ -93,7 +93,7 @@ void kvminithart() {
 
     // flush stale entries from the TLB.
     sfence_vma();
-    Info("cpu %d, paging is enable !!!\n", cpuid());
+    Info("cpu %d, paging is enable\n", cpuid());
 }
 
 // Return the address of the PTE in page table pagetable

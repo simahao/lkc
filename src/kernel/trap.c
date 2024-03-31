@@ -45,7 +45,7 @@ void trapinithart(void) {
     // uint64 time = rdtime();
     // printf("time = %d\n",time);
     SET_TIMER();
-    Info("cpu %d, timer is enable !!!\n", cpuid());
+    Info("cpu %d, timer is enable\n", cpuid());
 }
 
 void tf_flstore(struct trapframe *self) {

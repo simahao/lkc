@@ -52,25 +52,50 @@ typedef int pid_t;
 #define va_copy(d, s) (__builtin_va_copy(d, s))
 typedef __builtin_va_list va_list;
 
-#define O_ACCMODE	00000003
-#define O_RDONLY	00000000
-#define O_WRONLY	00000001
-#define O_RDWR		00000002
+// #define O_ACCMODE	00000003
+// #define O_RDONLY	00000000
+// #define O_WRONLY	00000001
+// #define O_RDWR		00000002
 
-#define O_CREAT		 01000	/* not fcntl */
-#define O_TRUNC		 02000	/* not fcntl */
-#define O_EXCL		 04000	/* not fcntl */
-#define O_NOCTTY	010000	/* not fcntl */
+// #define O_CREAT		 01000	/* not fcntl */
+// #define O_TRUNC		 02000	/* not fcntl */
+// #define O_EXCL		 04000	/* not fcntl */
+// #define O_NOCTTY	010000	/* not fcntl */
 
-#define O_NONBLOCK	 00004
-#define O_APPEND	 00010
-#define O_DSYNC		040000	/* used to be O_SYNC, see below */
-#define O_DIRECTORY	0100000	/* must be a directory */
-#define O_NOFOLLOW	0200000 /* don't follow links */
-#define O_LARGEFILE	0400000 /* will be set by the kernel on every open */
-#define O_DIRECT	02000000 /* direct disk access - should check with OSF/1 */
-#define O_NOATIME	04000000
-#define O_CLOEXEC	010000000 /* set close_on_exec */
+// #define O_NONBLOCK	 00004
+// #define O_APPEND	 00010
+// #define O_DSYNC		040000	/* used to be O_SYNC, see below */
+// #define O_DIRECTORY	0100000	/* must be a directory */
+// #define O_NOFOLLOW	0200000 /* don't follow links */
+// #define O_LARGEFILE	0400000 /* will be set by the kernel on every open */
+// #define O_DIRECT	02000000 /* direct disk access - should check with OSF/1 */
+// #define O_NOATIME	04000000
+// #define O_CLOEXEC	010000000 /* set close_on_exec */
+
+// #define DIR 0x040000
+// #define FILE 0x100000
+
+#define O_LARGEFILE 0100000 //origin:0400000
+#define O_ACCMODE 00000003
+#define O_RDONLY 00000000
+#define O_WRONLY 00000001
+#define O_RDWR 00000002
+
+#define O_CREAT        0100   /* not fcntl */ //origin:01000
+#define O_TRUNC       01000   /* not fcntl */ //origin:02000
+#define O_EXCL         0200    /* not fcntl */ // origin: 04000
+#define O_NOCTTY       0400 /* not fcntl */ // origin: 010000
+
+#define O_NONBLOCK    04000 //origin: 00004
+#define O_APPEND      02000 //origin: 00010
+#define O_SYNC     04010000
+#define O_RSYNC    04010000
+#define O_DSYNC      010000      /* used to be O_SYNC, see below */ //origin: 040000
+#define O_DIRECTORY  040000 /* must be a directory */ //origin: 0100000
+#define O_NOFOLLOW  0100000   /* don't follow links */ //origin: 0200000
+#define O_DIRECT    0200000   /* direct disk access - should check with OSF/1 */ //origin: 02000000
+#define O_NOATIME  01000000 //origin: 04000000
+#define O_CLOEXEC  02000000  /* set close_on_exec */ //origin: 01000000
 
 #define DIR 0x040000
 #define FILE 0x100000

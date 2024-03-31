@@ -37,19 +37,22 @@ int fetchstr(uint64 addr, char *buf, int max) {
 uint64 argraw(int n) {
     // struct proc *p = proc_current();
     struct tcb *t = thread_current();
+    // printf("\na0=%d,a1=%d,a2=%d,a3=%d,a4=%d,a5=%d\n", t->trapframe->a0,
+    //     t->trapframe->a1, t->trapframe->a2, t->trapframe->a3,
+    //     t->trapframe->a4, t->trapframe->a5);
     switch (n) {
-    case 0:
-        return t->trapframe->a0;
-    case 1:
-        return t->trapframe->a1;
-    case 2:
-        return t->trapframe->a2;
-    case 3:
-        return t->trapframe->a3;
-    case 4:
-        return t->trapframe->a4;
-    case 5:
-        return t->trapframe->a5;
+        case 0:
+            return t->trapframe->a0;
+        case 1:
+            return t->trapframe->a1;
+        case 2:
+            return t->trapframe->a2;
+        case 3:
+            return t->trapframe->a3;
+        case 4:
+            return t->trapframe->a4;
+        case 5:
+            return t->trapframe->a5;
     }
     panic("argraw");
     return -1;

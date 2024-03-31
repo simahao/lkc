@@ -217,14 +217,14 @@ struct inode *namei_parent(char *path, char *name) {
 unsigned char __IMODE_TO_DTYPE(uint16 mode) {
     unsigned char dtype = DT_UNKNOWN;
     switch (mode & S_IFMT) {
-    case S_IFREG: dtype = DT_REG; break;
-    case S_IFDIR: dtype = DT_DIR; break;
-    case S_IFCHR: dtype = DT_CHR; break;
-    case S_IFBLK: dtype = DT_BLK; break;
-    case S_IFIFO: dtype = DT_FIFO; break;
-    case S_IFSOCK: dtype = DT_SOCK; break;
-    default:
-        break;
+        case S_IFREG: dtype = DT_REG; break;
+        case S_IFDIR: dtype = DT_DIR; break;
+        case S_IFCHR: dtype = DT_CHR; break;
+        case S_IFBLK: dtype = DT_BLK; break;
+        case S_IFIFO: dtype = DT_FIFO; break;
+        case S_IFSOCK: dtype = DT_SOCK; break;
+        default:
+            break;
     }
     return dtype;
 }
