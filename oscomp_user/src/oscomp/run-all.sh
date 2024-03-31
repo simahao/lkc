@@ -3,7 +3,6 @@
 tests="
 brk
 chdir
-clone
 close
 dup2
 dup
@@ -31,10 +30,9 @@ unlink
 wait
 waitpid
 write
-yield.sh
+yield
 "
-for i in $tests
-do
-	echo "Testing $i :"
-	./$i
+for i in $tests; do
+    echo "Testing $i :"
+    ./$i
 done

@@ -39,12 +39,12 @@ struct utsname {
 };
 
 struct utsname sys_ut = {
-    "LostWakeup OS",
+    "LKC OS",
     "oskernel",
-    .release = "5.0",
-    .version = "0.0.0",
+    .release = "1.0",
+    .version = "1212",
     "RISCV",
-    "www.hdu.lostwakeup.edu.cn",
+    "www.tsinghua.edu.cn",
 };
 
 /*

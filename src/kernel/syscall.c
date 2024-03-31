@@ -496,8 +496,7 @@ void syscall(void) {
         }
 #endif
     } else {
-        printf("tid : %d name : %s: unknown sys call %d\n",
-               t->tid, t->name, num);
+        printf("tid : %d name : %s: unknown sys call %d\n", t->tid, t->name, num);
         t->trapframe->a0 = 0;
     }
 }

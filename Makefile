@@ -265,7 +265,8 @@ image: user fat32.img
 
 
 # user: oscomp busybox
-user: apps
+# user: apps
+user: oscomp
 	@echo "$(YELLOW)build user:$(RESET)"
 	@cp README.md $(FSIMG)/
 	@make -C $(USER)
@@ -273,6 +274,7 @@ user: apps
 	@mv $(BINFILE) $(FSIMG)/bin/
 	@mv $(BOOTFILE) $(FSIMG)/boot/
 	@mv $(TESTFILE) $(FSIMG)/test/
+	@mv $(OSCOMPU)/riscv64/* $(FSIMG)/oscomp/
 # @cp support/* $(FSIMG)/ -r
 
 oscomp:
