@@ -152,8 +152,8 @@ ifeq ($(SUBMIT), 1)
 endif
 
 CFLAGS += -MD
-CFLAGS += -mcmodel=medany -march=rv64g -mabi=lp64f
-# CFLAGS += -mcmodel=medany -march=rv64gc -mabi=lp64d
+# CFLAGS += -mcmodel=medany -march=rv64g -mabi=lp64f
+CFLAGS += -mcmodel=medany -march=rv64gc -mabi=lp64d
 CFLAGS += -ffreestanding -fno-common -nostdlib -mno-relax
 CFLAGS += -I$(ROOT)/include
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)

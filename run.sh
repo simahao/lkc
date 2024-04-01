@@ -12,6 +12,9 @@ function usage() {
     exit 1
 }
 
+apt update
+apt install sudo cmake -y
+
 if [[ $# -ge 3 ]]; then
     usage
 fi
