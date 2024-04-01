@@ -1,6 +1,7 @@
 #!/bin/bash
 # author:simahao
-# date: 2024/3/26
+# date: 2024/3/26      init
+# date: 2024/4/1       add apt update and apt install sudo cmake
 # start linux with qemu
 
 function usage() {
@@ -12,8 +13,18 @@ function usage() {
     exit 1
 }
 
-apt update
-apt install sudo cmake -y
+UF=0
+if ! which sudo > /dev/null 2>&1; then
+    apt update
+    UF=1
+    apt install sudo -y
+fi
+if ! which cmake > /dev/null 2>&1; then
+    if [[ $UF == 0 ]]; then
+        apt update
+    fi
+    apt install cmake -y
+fi
 
 if [[ $# -ge 3 ]]; then
     usage
