@@ -214,6 +214,10 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
 	else echo "-s -p $(GDBPORT)"; fi)
 
 ## 5. Targets
+sudo:
+	@if ! which sudo > /dev/null; then \
+		apt install sudo; \
+	fi
 
 format:
 	@which clang-format-15 > /dev/null 2>&1 || apt install -y clang-format-15
@@ -224,7 +228,7 @@ format:
 all: kernel-qemu image
 	$(QEMU) $(QEMUOPTS)
 
-kernel: kernel-qemu
+kernel: sudo kernel-qemu
 	$(QEMU) $(QEMUOPTS)
 
 gdb: kernel-qemu .gdbinit
@@ -238,7 +242,7 @@ gdb: kernel-qemu .gdbinit
 export CC AS LD OBJCOPY OBJDUMP CFLAGS ASFLAGS LDFLAGS ROOT SCRIPTS USER
 
 # image: user fat32.img
-image: user fat32.img
+image: sudo user fat32.img
 
 # apps:
 # 	@cp apps/musl-1.2.4/lib/libc.so fsimg/
@@ -282,16 +286,16 @@ oscomp:
 
 fat32.img: dep
 	@dd if=/dev/zero of=$@ bs=1M count=1024
-	@mkfs.vfat -F 32 -s 2 -a $@
-	@mount -t vfat $@ $(MNT_DIR)
-	@cp -r $(FSIMG)/* $(MNT_DIR)/
-	@sync $(MNT_DIR) && umount -v $(MNT_DIR)
+	@sudo mkfs.vfat -F 32 -s 2 -a $@
+	@sudo mount -t vfat $@ $(MNT_DIR)
+	@sudo cp -r $(FSIMG)/* $(MNT_DIR)/
+	@sync $(MNT_DIR) && sudo umount -v $(MNT_DIR)
 
 # for sdcard.img(local test)
 mount:
-	@mount -t vfat fat32.img mount_sd
+	@sudo mount -t vfat fat32.img mount_sd
 umount:
-	@umount -v mount_sd
+	@sudo umount -v mount_sd
 
 submit: image
 	@riscv64-linux-gnu-objcopy -S -O binary fsimg/submit tmp
