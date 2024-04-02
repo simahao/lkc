@@ -282,16 +282,16 @@ oscomp:
 
 fat32.img: dep
 	@dd if=/dev/zero of=$@ bs=1M count=1024
-	@sudo mkfs.vfat -F 32 -s 2 -a $@
-	@sudo mount -t vfat $@ $(MNT_DIR)
-	@sudo cp -r $(FSIMG)/* $(MNT_DIR)/
-	@sync $(MNT_DIR) && sudo umount -v $(MNT_DIR)
+	@mkfs.vfat -F 32 -s 2 -a $@
+	@mount -t vfat $@ $(MNT_DIR)
+	@cp -r $(FSIMG)/* $(MNT_DIR)/
+	@sync $(MNT_DIR) && umount -v $(MNT_DIR)
 
 # for sdcard.img(local test)
 mount:
-	@sudo mount -t vfat fat32.img mount_sd
+	@mount -t vfat fat32.img mount_sd
 umount:
-	@sudo umount -v mount_sd
+	@umount -v mount_sd
 
 submit: image
 	@riscv64-linux-gnu-objcopy -S -O binary fsimg/submit tmp
