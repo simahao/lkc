@@ -45,11 +45,11 @@ int main(void) {
     // mknod("/dev/urandom", S_IFCHR, DEV_CPU_DMA_LATENCY << 8);
 
     printf("\n");
-    printf(" _       _  __   ____ \n");
-    printf("| |     | |/ /  / ___|\n");
-    printf("| |     | ' /  | |    \n");
-    printf("| |___  | . \\  | |___ \n");
-    printf("|_____| |_|\\_\\  \\____|\n");
+    printf("  ___ _ __ __ _ _   _\n");
+    printf(" / __| '__/ _` | | | |\n");
+    printf("| (__| | | (_| | |_| |\n");
+    printf(" \\___|_|  \\__,_|\\__, |\n");
+    printf("                |___/\n");
 
     printf("\n");
 

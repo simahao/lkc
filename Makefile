@@ -228,7 +228,7 @@ format:
 all: kernel-qemu image
 	$(QEMU) $(QEMUOPTS)
 
-kernel: sudo kernel-qemu
+kernel: kernel-qemu
 	$(QEMU) $(QEMUOPTS)
 
 gdb: kernel-qemu .gdbinit
