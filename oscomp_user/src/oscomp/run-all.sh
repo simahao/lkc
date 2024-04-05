@@ -38,3 +38,4 @@ for i in $tests; do
     ./$i
 done
 
+shutdown
