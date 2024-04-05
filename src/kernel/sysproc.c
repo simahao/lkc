@@ -78,10 +78,6 @@ sys_clone(void) {
     argaddr(3, &tls_addr);
     argaddr(4, &ctid_addr);
     return do_clone(flags, stack, ptid_addr, tls_addr, ctid_addr);
-    // if (ret < 0) {
-    //     Log("hit");
-    // }
-    // return ret;
 }
 
 /*

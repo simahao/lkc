@@ -307,7 +307,8 @@ submit: image
 clean-all: clean
 	-@make -C $(USER)/ clean
 	-@make -C $(OSCOMPU)/ clean
-	-rm $(SCRIPTS)/mkfs fs.img fat32.img $(FSIMG)/* -rf
+# -rm $(SCRIPTS)/mkfs fs.img fat32.img $(FSIMG)/* -rf
+	-rm fat32.img $(FSIMG)/* -rf
 
 clean:
 	-rm build/* kernel-qemu $(GENINC) -rf

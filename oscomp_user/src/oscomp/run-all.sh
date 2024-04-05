@@ -3,6 +3,7 @@
 tests="
 brk
 chdir
+clone
 close
 dup2
 dup
@@ -36,3 +37,4 @@ for i in $tests; do
     echo "Testing $i :"
     ./$i
 done
+

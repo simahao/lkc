@@ -50,10 +50,9 @@ pid_t fork(void)
 pid_t clone(int (*fn)(void *arg), void *arg, void *stack, size_t stack_size, unsigned long flags)
 {
     if (stack)
-	stack += stack_size;
-
-    return __clone(fn, stack, flags, NULL, NULL, NULL);
-    //return syscall(SYS_clone, fn, stack, flags, NULL, NULL, NULL);
+        stack += stack_size;
+    // return __clone(fn, stack, flags, NULL, NULL, NULL);
+    return syscall(SYS_clone, fn, stack, flags, NULL, NULL, NULL);
 }
 void exit(int code)
 {
@@ -63,6 +62,7 @@ void exit(int code)
 int waitpid(int pid, int *code, int options)
 {
     return syscall(SYS_wait4, pid, code, options, 0);
+    // return syscall(SYS_wait4, pid, code, options);
 }
 
 int exec(char *name)

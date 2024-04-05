@@ -297,6 +297,7 @@ int do_clone(uint64 flags, vaddr_t stack, uint64 ptid, uint64 tls, uint64 ctid) 
     // #ifdef __STRACE__
     //     print_clone_flags(flags);
     // #endif
+    // print_clone_flags(flags);
     if (flags & CLONE_THREAD) {
         if ((t = alloc_thread(thread_forkret)) == 0) {
             return -1;
@@ -433,7 +434,6 @@ int do_clone(uint64 flags, vaddr_t stack, uint64 ptid, uint64 tls, uint64 ctid) 
     acquire(&t->lock);
     TCB_Q_changeState(t, TCB_RUNNABLE);
     release(&t->lock);
-
     return pid;
 }
 
