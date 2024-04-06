@@ -21,7 +21,6 @@ void test_clone(void) {
 
     assert(child_pid != -1);
     if (child_pid == 0) {
-        child_func();
         exit(0);
     } else {
         if (wait(&wstatus) == child_pid)

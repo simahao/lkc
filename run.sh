@@ -30,6 +30,7 @@ if [[ $# -ge 3 ]]; then
     usage
 fi
 
+make clean-all
 if [[ ! -f ./fat32.img ]]; then
     make image
 fi
@@ -49,5 +50,4 @@ if [[ $1 != '' ]]; then
         OPTION2="gdb"
     fi
 fi
-make clean
 make "PLATFORM=${OPTION1}" ${OPTION2}
