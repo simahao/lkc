@@ -214,19 +214,18 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
 	else echo "-s -p $(GDBPORT)"; fi)
 
 ## 5. Targets
-sudo:
-	@if ! which sudo > /dev/null; then \
-		apt install sudo; \
-	fi
+all: kernel-qemu
+	$(QEMU) $(QEMUOPTS)
+
+# sudo:
+# 	@if ! which sudo > /dev/null; then \
+# 		apt install sudo; \
+# 	fi
 
 format:
 	@which clang-format-15 > /dev/null 2>&1 || apt install -y clang-format-15
 # pml_hifive.h is not be formatted by clang-format
 	clang-format-15 -i $(filter %.c, $(SRCS)) $(filter-out include/platform/hifive/pml_hifive.h, $(shell find include -name "*.c" -o -name "*.h"))
-
-
-all: kernel-qemu image
-	$(QEMU) $(QEMUOPTS)
 
 kernel: kernel-qemu
 	$(QEMU) $(QEMUOPTS)
@@ -242,7 +241,7 @@ gdb: kernel-qemu .gdbinit
 export CC AS LD OBJCOPY OBJDUMP CFLAGS ASFLAGS LDFLAGS ROOT SCRIPTS USER
 
 # image: user fat32.img
-image: sudo user fat32.img
+image: user fat32.img
 
 # apps:
 # 	@cp apps/musl-1.2.4/lib/libc.so fsimg/
@@ -278,6 +277,7 @@ user: oscomp
 	@mv $(BINFILE) $(FSIMG)/bin/
 	@mv $(BOOTFILE) $(FSIMG)/boot/
 	@mv $(TESTFILE) $(FSIMG)/test/
+	@rm -rf $(FSIMG)/oscomp/*
 	@mv $(OSCOMPU)/riscv64/* $(FSIMG)/oscomp/
 # @cp support/* $(FSIMG)/ -r
 

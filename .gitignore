@@ -4,9 +4,7 @@
 *.asm
 *.sym
 *.a
-*.img
 fsimg
-fat32.img
 riscv64
 kernel-qemu
 .gdbinit
