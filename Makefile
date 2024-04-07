@@ -285,7 +285,7 @@ oscomp:
 	@make -C $(OSCOMPU) -e all CHAPTER=7
 
 fat32.img: dep
-	@dd if=/dev/zero of=$@ bs=1M count=1024
+	@dd if=/dev/zero of=$@ bs=1M count=32
 	@sudo mkfs.vfat -F 32 -s 2 -a $@
 	@sudo mount -t vfat $@ $(MNT_DIR)
 	@sudo cp -r $(FSIMG)/* $(MNT_DIR)/
