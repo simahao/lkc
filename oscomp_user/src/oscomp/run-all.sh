@@ -3,6 +3,7 @@
 tests="
 brk
 chdir
+clone
 close
 dup2
 dup
