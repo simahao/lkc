@@ -48,11 +48,17 @@ pid_t fork(void)
     return syscall(SYS_clone, SIGCHLD, 0);
 }
 
-pid_t clone(int (*fn)(void *arg), void *arg, void *stack, size_t stack_size, unsigned long flags)
+pid_t clone(int (*fn)(void), void *arg, void *stack, size_t stack_size, unsigned long flags)
 {
     if (stack)
         stack += stack_size;
-    return __clone(fn, stack, flags, NULL, NULL, NULL);
+    pid_t ret = syscall(SYS_clone, flags, 0);
+    if (ret == 0) {
+        return fn();
+    } else {
+        return ret;
+    }
+    // return __clone(fn, stack, flags, NULL, NULL, NULL);
     // return syscall(SYS_clone, fn, stack, flags, NULL, NULL, NULL);
     // return syscall(SYS_clone, flags, 0, NULL, NULL, NULL);
 }

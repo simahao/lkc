@@ -3,7 +3,7 @@
 
 #include "stddef.h"
 
-extern int __clone(int (*func)(void *), void *stack, int flags, void *arg, ...);
+extern int __clone(int (*func)(void), void *stack, int flags, void *arg, ...);
 
 int open(const char *, int);
 int openat(int, const char*, int);
@@ -17,7 +17,7 @@ pid_t getppid(void);
 int sched_yield(void);
 void exit(int);
 pid_t fork(void);
-pid_t clone(int (*fn)(void *arg), void *arg, void *stack, size_t stack_size, unsigned long flags);
+pid_t clone(int (*fn)(void), void *arg, void *stack, size_t stack_size, unsigned long flags);
 int exec(char *);
 int execve(const char *, char *const [], char *const []);
 int waitpid(int, int *, int);

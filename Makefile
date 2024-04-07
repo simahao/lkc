@@ -284,7 +284,7 @@ user: oscomp
 oscomp:
 	@make -C $(OSCOMPU) -e all CHAPTER=7
 
-fat32.img: dep
+fat32.img:
 	@dd if=/dev/zero of=$@ bs=1M count=32
 	@sudo mkfs.vfat -F 32 -s 2 -a $@
 	@sudo mount -t vfat $@ $(MNT_DIR)
@@ -313,7 +313,7 @@ clean-all: clean
 clean:
 	-rm build/* kernel-qemu $(GENINC) -rf
 
-.PHONY: qemu clean user clean-all format test oscomp dep image apps mount umount submit
+.PHONY: qemu clean user clean-all format test oscomp image mount umount submit
 
 ## 6. Build kernel
 include $(SCRIPTS)/build.mk
