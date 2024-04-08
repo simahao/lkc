@@ -40,20 +40,19 @@ int main(void) {
 
     // after we create tty, we can use printf
     printf("submit start\n");
-    // CHECK(0 + 0, "%s\n", "test");
-    CHECK(mkdir("/proc", 0666) == 0);
-    CHECK(mkdir("/var", 0666) == 0);
-    CHECK(mkdir("/var/tmp", 0666) == 0);
-    CHECK(mkdir("/var/tmp/lmbench", 0666) == 0);
-    CHECK(mkdir("/proc/mounts", 0666) == 0);
-    CHECK(openat(AT_FDCWD, "/proc/meminfo", O_RDWR | O_CREAT) > 0);
-    CHECK(mkdir("/tmp", 0666) == 0);
-    CHECK(mknod("/dev/null", S_IFCHR, DEV_NULL << 8) == 0);
-    CHECK(mknod("/dev/zero", S_IFCHR, DEV_ZERO << 8) == 0);
-    CHECK(mknod("/dev/cpu_dma_latency", S_IFCHR, DEV_CPU_DMA_LATENCY << 8) == 0);
-    CHECK(mkdir("/dev/shm", 0666) == 0);
-    CHECK(mkdir("/dev/misc", 0666) == 0);
-    CHECK(mknod("/dev/misc/rtc", S_IFCHR, DEV_RTC << 8) == 0);
+    // CHECK(mkdir("/proc", 0666) == 0);
+    // CHECK(mkdir("/var", 0666) == 0);
+    // CHECK(mkdir("/var/tmp", 0666) == 0);
+    // CHECK(mkdir("/var/tmp/lmbench", 0666) == 0);
+    // CHECK(mkdir("/proc/mounts", 0666) == 0);
+    // CHECK(openat(AT_FDCWD, "/proc/meminfo", O_RDWR | O_CREAT) > 0);
+    // CHECK(mkdir("/tmp", 0666) == 0);
+    // CHECK(mknod("/dev/null", S_IFCHR, DEV_NULL << 8) == 0);
+    // CHECK(mknod("/dev/zero", S_IFCHR, DEV_ZERO << 8) == 0);
+    // CHECK(mknod("/dev/cpu_dma_latency", S_IFCHR, DEV_CPU_DMA_LATENCY << 8) == 0);
+    // CHECK(mkdir("/dev/shm", 0666) == 0);
+    // CHECK(mkdir("/dev/misc", 0666) == 0);
+    // CHECK(mknod("/dev/misc/rtc", S_IFCHR, DEV_RTC << 8) == 0);
 
     printf("ready to run test\n");
     runtest();
@@ -62,15 +61,7 @@ int main(void) {
 }
 
 char *testpath[] = {
-    "./time-test",
-    "busybox_testcode.sh",
-    "libctest_testcode.sh",
-    "iozone_testcode.sh",
-    "lua_testcode.sh",
-    "libc-bench",
-    "unixbench_testcode.sh",
-    "lmbench_testcode.sh",
-    "cyclictest_testcode.sh",
+    "./run-all.sh"
 };
 
 

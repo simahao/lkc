@@ -665,9 +665,9 @@ uint64 sys_openat(void) {
     } else {
         // 否则，我们先调用 find_inode 找到 path 对应的文件 inode 节点
         if ((ip = find_inode(path, dirfd, 0)) == 0) {
-            if (strcmp(path, "/dev/tty") != 0) {
-                printf("not create mode,find inode,no result, path=%s,dirfd=%d\n", path, dirfd);
-            }
+            // if (strcmp(path, "/dev/tty") != 0) {
+            //     printf("not create mode,find inode,no result, path=%s,dirfd=%d\n", path, dirfd);
+            // }
             return -1;
         }
         // ASSERT(ip->i_op);
@@ -678,7 +678,6 @@ uint64 sys_openat(void) {
         // }
 
         if (((flags & O_DIRECTORY) == O_DIRECTORY) && !S_ISDIR(ip->i_mode)) {
-            printf("openat:686, mode: %d, path=%s\n", ip->i_mode, path);
             ip->i_op->iunlock_put(ip);
             return -1;
         }
@@ -686,7 +685,6 @@ uint64 sys_openat(void) {
 
     if ((S_ISCHR(ip->i_mode) || S_ISBLK(ip->i_mode))
         && (MAJOR(ip->i_rdev) < 0 || MAJOR(ip->i_rdev) >= NDEV)) {
-        printf("openat:694\n");
         ip->i_op->iunlock_put(ip);
         return -1;
     }

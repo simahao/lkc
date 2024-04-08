@@ -4,7 +4,7 @@
 # ####### configuration #######
 PLATFORM ?= qemu_virt
 # PLATFORM ?= qemu_sifive_u
-SUBMIT ?= 0
+SUBMIT ?= 1
 ###############################
 
 # debug options
@@ -185,12 +185,7 @@ SRCS = $(filter-out $(SRCS-BLACKLIST-y),$(SRCS-y))
 
 ifeq ($(PLATFORM), qemu_virt)
 	QEMUOPTS = -machine virt -bios bootloader/opensbi-qemu -kernel kernel-qemu -m 1G -smp 2 -nographic
-	ifeq ($(SUBMIT), 1)
-# qemuopts += -drive file=fat32.img,if=none,format=raw,id=x0
-		QEMUOPTS += -drive file=sdcard.img,if=none,format=raw,id=x0
-	else
-		QEMUOPTS += -drive file=fat32.img,if=none,format=raw,id=x0
-	endif
+	QEMUOPTS += -drive file=fat32.img,if=none,format=raw,id=x0
 	QEMUOPTS += -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
 	CFLAGS += -DVIRT -DNCPU=2
 endif
@@ -275,17 +270,18 @@ user: oscomp
 	@make -C $(USER)
 	@cp busybox/busybox $(FSIMG)/busybox
 	@mv $(BINFILE) $(FSIMG)/bin/
-	@mv $(BOOTFILE) $(FSIMG)/boot/
+	@cp $(BOOTFILE) $(FSIMG)/boot/
 	@mv $(TESTFILE) $(FSIMG)/test/
 	@rm -rf $(FSIMG)/oscomp/*
-	@mv $(OSCOMPU)/riscv64/* $(FSIMG)/oscomp/
+	@mv $(OSCOMPU)/riscv64/* $(FSIMG)/
+	@cp $(OSCOMPU)/src/oscomp/run-all.sh $(FSIMG)/
 # @cp support/* $(FSIMG)/ -r
 
 oscomp:
 	@make -C $(OSCOMPU) -e all CHAPTER=7
 
 fat32.img:
-	@dd if=/dev/zero of=$@ bs=1M count=32
+	@dd if=/dev/zero of=$@ bs=1M count=16
 	@sudo mkfs.vfat -F 32 -s 2 -a $@
 	@sudo mount -t vfat $@ $(MNT_DIR)
 	@sudo cp -r $(FSIMG)/* $(MNT_DIR)/
