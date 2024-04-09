@@ -209,16 +209,16 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
 	else echo "-s -p $(GDBPORT)"; fi)
 
 ## 5. Targets
-all:
+all: sudo
 	@make clean-all
 	@make image
 	@make kernel
 # $(QEMU) $(QEMUOPTS)
 
-# sudo:
-# 	@if ! which sudo > /dev/null; then \
-# 		apt install sudo; \
-# 	fi
+sudo:
+	@if ! which sudo > /dev/null; then \
+		apt install sudo; \
+	fi
 
 format:
 	@which clang-format-15 > /dev/null 2>&1 || apt install -y clang-format-15
@@ -285,7 +285,7 @@ oscomp:
 
 fat32.img:
 	@dd if=/dev/zero of=$@ bs=1M count=128
-	@sudo mkfs.vfat -F 32 -s 2 -a $@
+	@mkfs.vfat -F 32 -s 2 -a $@
 	@sudo mount -t vfat $@ $(MNT_DIR)
 	@sudo cp -r $(FSIMG)/* $(MNT_DIR)/
 	@sync $(MNT_DIR) && sudo umount -v $(MNT_DIR)
