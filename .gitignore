@@ -4,6 +4,7 @@
 *.asm
 *.sym
 *.a
+*.img
 fsimg
 riscv64
 kernel-qemu

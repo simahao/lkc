@@ -1,10 +1,10 @@
 ## 1. Basic
-.DEFAULT_GOAL = kernel
+.DEFAULT_GOAL = all
 
 # ####### configuration #######
 PLATFORM ?= qemu_virt
 # PLATFORM ?= qemu_sifive_u
-SUBMIT ?= 1
+SUBMIT ?= 0
 ###############################
 
 # debug options
@@ -209,8 +209,11 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
 	else echo "-s -p $(GDBPORT)"; fi)
 
 ## 5. Targets
-all: kernel-qemu
-	$(QEMU) $(QEMUOPTS)
+all:
+	@make clean-all
+	@make image
+	@make kernel
+# $(QEMU) $(QEMUOPTS)
 
 # sudo:
 # 	@if ! which sudo > /dev/null; then \
@@ -281,7 +284,7 @@ oscomp:
 	@make -C $(OSCOMPU) -e all CHAPTER=7
 
 fat32.img:
-	@dd if=/dev/zero of=$@ bs=1M count=16
+	@dd if=/dev/zero of=$@ bs=1M count=128
 	@sudo mkfs.vfat -F 32 -s 2 -a $@
 	@sudo mount -t vfat $@ $(MNT_DIR)
 	@sudo cp -r $(FSIMG)/* $(MNT_DIR)/

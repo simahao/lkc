@@ -5,8 +5,9 @@
 #include "stdio.h"
 #include "string.h"
 
-char *argv[] = {"/busybox/busybox", "sh", 0};
-char *envp[] = {"PATH=/:/usr/bin:/musl-gcc/include:/bin/", "LD_LIBRARY_PATH=/", 0};
+// char *argv[] = {"/busybox", "sh", 0};
+char *argv[] = {0};
+char *envp[] = {"PATH=/:/usr/bin:/bin", "LD_LIBRARY_PATH=/", 0};
 
 #define CONSOLE 1
 #define DEV_NULL 2
@@ -64,7 +65,8 @@ int main(void) {
         if (pid == 0) {
             printf("about to start sh\n");
             // execve("/bin/sh",argv,envp);
-            execve("/busybox", argv, envp);
+            // execve("/busybox", argv, envp);
+            execve("/run-all.sh", argv, envp);
             printf("init: exec sh failed\n");
             exit(1);
         }
