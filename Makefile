@@ -5,6 +5,7 @@
 PLATFORM ?= qemu_virt
 # PLATFORM ?= qemu_sifive_u
 SUBMIT ?= 0
+RUN ?= 1
 ###############################
 
 # debug options
@@ -185,7 +186,11 @@ SRCS = $(filter-out $(SRCS-BLACKLIST-y),$(SRCS-y))
 
 ifeq ($(PLATFORM), qemu_virt)
 	QEMUOPTS = -machine virt -bios bootloader/opensbi-qemu -kernel kernel-qemu -m 1G -smp 2 -nographic
-	QEMUOPTS += -drive file=fat32.img,if=none,format=raw,id=x0
+	ifeq ($(RUN), 1)
+		QEMUOPTS += -drive file=sdcard.img,if=none,format=raw,id=x0
+	else
+		QEMUOPTS += -drive file=fat32.img,if=none,format=raw,id=x0
+	endif
 	QEMUOPTS += -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
 	CFLAGS += -DVIRT -DNCPU=2
 endif
@@ -208,12 +213,19 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
 	then echo "-gdb tcp::$(GDBPORT)"; \
 	else echo "-s -p $(GDBPORT)"; fi)
 
+dst=/mnt
+
 ## 5. Targets
-all: sudo
+all:
 	@make clean-all
 	@make image
+	@make sd
 	@make kernel
-# $(QEMU) $(QEMUOPTS)
+
+sd:
+	@if [ ! -d "$(dst)/bin" ]; then sudo mkdir $(dst)/bin; fi
+	@sudo cp $(FSIMG)/boot/init $(dst)/
+	@sudo cp $(FSIMG)/run-all.sh $(dst)/
 
 sudo:
 	@if ! which sudo > /dev/null; then \
