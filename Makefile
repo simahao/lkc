@@ -216,7 +216,7 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
 dst=/mnt
 
 ## 5. Targets
-all:
+all: sudo
 	@make clean-all
 	@make image
 	@make sd
