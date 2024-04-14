@@ -4,7 +4,8 @@
 # ####### configuration #######
 PLATFORM ?= qemu_virt
 # PLATFORM ?= qemu_sifive_u
-SUBMIT ?= 1
+SUBMIT ?= 0
+RUNTEST ?= 1
 ###############################
 
 # debug options
@@ -151,6 +152,10 @@ ifeq ($(SUBMIT), 1)
 	CFLAGS += -DSUBMIT
 endif
 
+ifeq ($(RUNTEST), 1)
+	CFLAGS += -DRUNTEST
+endif
+
 CFLAGS += -MD
 # CFLAGS += -mcmodel=medany -march=rv64g -mabi=lp64f
 CFLAGS += -mcmodel=medany -march=rv64gc -mabi=lp64d
@@ -208,8 +213,6 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
 	then echo "-gdb tcp::$(GDBPORT)"; \
 	else echo "-s -p $(GDBPORT)"; fi)
 
-dst=/mnt
-
 ## 5. Targets
 local:
 	@make clean-all
@@ -218,6 +221,7 @@ local:
 
 all: kernel-qemu
 
+# dst=/mnt
 # sd:
 # 	@if [ ! -d "$(dst)/bin" ]; then sudo mkdir $(dst)/bin; fi
 # 	@sudo cp $(FSIMG)/boot/init $(dst)/
@@ -275,6 +279,7 @@ fat32.img:
 	@sudo mount -t vfat $@ $(MNT_DIR)
 	@sudo cp -r $(FSIMG)/* $(MNT_DIR)/
 	@sync $(MNT_DIR) && sudo umount -v $(MNT_DIR)
+	@cp fat32.img sdcard.img
 
 # for sdcard.img(local test)
 mount:
