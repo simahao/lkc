@@ -4,8 +4,7 @@
 # ####### configuration #######
 PLATFORM ?= qemu_virt
 # PLATFORM ?= qemu_sifive_u
-SUBMIT ?= 0
-RUN ?= 1
+SUBMIT ?= 1
 ###############################
 
 # debug options
@@ -186,11 +185,7 @@ SRCS = $(filter-out $(SRCS-BLACKLIST-y),$(SRCS-y))
 
 ifeq ($(PLATFORM), qemu_virt)
 	QEMUOPTS = -machine virt -bios bootloader/opensbi-qemu -kernel kernel-qemu -m 1G -smp 2 -nographic
-	ifeq ($(RUN), 1)
-		QEMUOPTS += -drive file=sdcard.img,if=none,format=raw,id=x0
-	else
-		QEMUOPTS += -drive file=fat32.img,if=none,format=raw,id=x0
-	endif
+	QEMUOPTS += -drive file=fat32.img,if=none,format=raw,id=x0
 	QEMUOPTS += -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
 	CFLAGS += -DVIRT -DNCPU=2
 endif
@@ -216,16 +211,17 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
 dst=/mnt
 
 ## 5. Targets
-all: sudo
+local:
 	@make clean-all
 	@make image
-	@make sd
 	@make kernel
 
-sd:
-	@if [ ! -d "$(dst)/bin" ]; then sudo mkdir $(dst)/bin; fi
-	@sudo cp $(FSIMG)/boot/init $(dst)/
-	@sudo cp $(FSIMG)/run-all.sh $(dst)/
+all: kernel-qemu
+
+# sd:
+# 	@if [ ! -d "$(dst)/bin" ]; then sudo mkdir $(dst)/bin; fi
+# 	@sudo cp $(FSIMG)/boot/init $(dst)/
+# 	@sudo cp $(FSIMG)/run-all.sh $(dst)/
 
 sudo:
 	@if ! which sudo > /dev/null; then \
@@ -253,29 +249,6 @@ export CC AS LD OBJCOPY OBJDUMP CFLAGS ASFLAGS LDFLAGS ROOT SCRIPTS USER
 # image: user fat32.img
 image: user fat32.img
 
-# apps:
-# 	@cp apps/musl-1.2.4/lib/libc.so fsimg/
-# 	@cp apps/libc-test/disk/* fsimg/libc-test
-# 	@cp apps/lmbench/bin/riscv64/lmbench_all fsimg/lmbench
-# 	@cp sdcard/lmbench_testcode.sh fsimg/lmbench
-# 	@cp apps/lmbench/bin/riscv64/hello fsimg/lmbench
-# 	@cp apps/libc-bench/libc-bench fsimg/libc-bench
-# 	@cp apps/time-test/time-test fsimg/time-test
-# 	@cp apps/iozone/iozone fsimg/iozone
-# 	@cp apps/scripts/iozone/* fsimg/iozone
-# 	@cp apps/lua/src/lua fsimg/lua
-# 	@cp apps/scripts/lua/* fsimg/lua
-# 	@cp apps/netperf/src/netperf apps/netperf/src/netserver fsimg/netperf/
-# 	@cp apps/scripts/netperf/* fsimg/netperf/
-# 	@cp sdcard/cyclictest sdcard/hackbench fsimg/cyclictest
-# 	@cp sdcard/cyclictest_testcode.sh fsimg/cyclictest
-# 	@cp sdcard/lmbench_all fsimg/lmbench_test
-# 	@cp sdcard/hello fsimg/lmbench_test
-# 	@cp sdcard/lmbench_testcode.sh fsimg/lmbench_test
-# 	@cp sdcard/unixbench/* fsimg/unixbench
-# 	@cp sdcard/iperf3 fsimg/iperf
-# 	@cp sdcard/iperf_testcode.sh fsimg/iperf
-
 
 # user: oscomp busybox
 # user: apps
@@ -288,6 +261,7 @@ user: oscomp
 	@cp $(BOOTFILE) $(FSIMG)/boot/
 	@mv $(TESTFILE) $(FSIMG)/test/
 	@rm -rf $(FSIMG)/oscomp/*
+	@rm -rf $(FSIMG)/mnt/*
 	@mv $(OSCOMPU)/riscv64/* $(FSIMG)/
 	@cp $(OSCOMPU)/src/oscomp/run-all.sh $(FSIMG)/
 # @cp support/* $(FSIMG)/ -r
@@ -318,7 +292,6 @@ submit: image
 clean-all: clean
 	-@make -C $(USER)/ clean
 	-@make -C $(OSCOMPU)/ clean
-# -rm $(SCRIPTS)/mkfs fs.img fat32.img $(FSIMG)/* -rf
 	-rm fat32.img $(FSIMG)/* -rf
 
 clean:

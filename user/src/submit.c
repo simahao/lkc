@@ -60,10 +60,42 @@ int main(void) {
     return 0;
 }
 
-char *testpath[] = {
-    "./run-all.sh"
-};
+// char *testpath[] = {
+//     "./run-all.sh"
+// };
 
+char *testpath[] = {
+    "brk",
+    "chdir",
+    "close",
+    "dup2",
+    "dup",
+    "execve",
+    "exit",
+    "fork",
+    "fstat",
+    "getcwd",
+    "getdents",
+    "getpid",
+    "getppid",
+    "gettimeofday",
+    "mkdir_",
+    "mmap",
+    "mount",
+    "munmap",
+    "openat",
+    "open",
+    "pipe",
+    "read",
+    "times",
+    "umount",
+    "uname",
+    "unlink",
+    "wait",
+    "waitpid",
+    "write",
+    "yield"
+};
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x) / sizeof((x)[0]))

@@ -845,20 +845,18 @@ void uvminit(struct mm_struct *mm, uchar *src, uint sz) {
         mem = kzalloc(PGSIZE);
         mappages(pagetable, 0 + i * PGSIZE, PGSIZE, (uint64)mem, PTE_W | PTE_R | PTE_X | PTE_U, COMMONPAGE);
         memmove(mem, src + PGSIZE * i, (PGSIZE > (sz - i * PGSIZE) ? (sz - i * PGSIZE) : PGSIZE));
+        printf("uvminit:%d\n", i);
     }
 
     if (vma_map(mm, 0, 4 * PGSIZE, PERM_READ | PERM_WRITE, VMA_TEXT) < 0) {
         panic("uvminit: vma_map failed");
     }
 
-    // print_vma(&mm->head_vma);
     // stack
     uvm_thread_stack(pagetable, 10);
     if (vma_map(mm, USTACK, 10 * PGSIZE, PERM_READ | PERM_WRITE, VMA_STACK) < 0) {
         panic("uvminit: vma_map failed");
     }
-
-    // vmprint(pagetable, 1, 0, 0, 0, 0);
 }
 
 void oscomp_init(void) {
@@ -870,7 +868,6 @@ void oscomp_init(void) {
     ASSERT(t != NULL);
     initproc = p;
 
-    // printf("sizeof code = %p\n", sizeof(initcode));
     uvminit(p->mm, initcode, sizeof(initcode));
 
     // prepare for the very first "return" from kernel to user.
@@ -880,8 +877,7 @@ void oscomp_init(void) {
     safestrcpy(p->name, "/init", 10);
     // acquire(&t->lock);
     TCB_Q_changeState(t, TCB_RUNNABLE);
-    // release(&t->lock);
     release(&p->lock);
-    Info("========== init finished! ==========\n");
+    Info("========== init finished! finish running testcase ==========\n");
     return;
 }
