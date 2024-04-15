@@ -279,6 +279,7 @@ void thread_usertrapret() {
     // and switches to user mode with sret.
     uint64 trampoline_userret = TRAMPOLINE + (userret - trampoline);
     ((void (*)(uint64))trampoline_userret)(satp);
+    printf("aaaaaaaaaaaaa\n");
 }
 
 // interrupts and exceptions from kernel code go here via kernelvec,
