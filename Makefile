@@ -275,7 +275,7 @@ oscomp:
 
 fat32.img:
 	@dd if=/dev/zero of=$@ bs=1M count=128
-	@mkfs.vfat -F 32 -s 2 -a $@
+	@mkfs.vfat -F 32 $@
 	@sudo mount -t vfat $@ $(MNT_DIR)
 	@sudo cp -r $(FSIMG)/* $(MNT_DIR)/
 	@sync $(MNT_DIR) && sudo umount -v $(MNT_DIR)
