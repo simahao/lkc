@@ -4,7 +4,7 @@
 # ####### configuration #######
 PLATFORM ?= qemu_virt
 # PLATFORM ?= qemu_sifive_u
-SUBMIT ?= 1
+SUBMIT ?= 0
 RUNTEST ?= 1
 ###############################
 

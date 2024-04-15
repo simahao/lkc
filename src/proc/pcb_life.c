@@ -850,16 +850,12 @@ void uvminit(struct mm_struct *mm, uchar *src, uint sz) {
 
     if (vma_map(mm, 0, 4 * PGSIZE, PERM_READ | PERM_WRITE, VMA_TEXT) < 0) {
         panic("uvminit: vma_map failed");
-    } else {
-        printf("vma_map text success\n");
     }
 
     // stack
     uvm_thread_stack(pagetable, 10);
     if (vma_map(mm, USTACK, 10 * PGSIZE, PERM_READ | PERM_WRITE, VMA_STACK) < 0) {
         panic("uvminit: vma_map failed");
-    } else {
-        printf("vma_map stack success\n");
     }
 }
 
@@ -882,6 +878,6 @@ void oscomp_init(void) {
     // acquire(&t->lock);
     TCB_Q_changeState(t, TCB_RUNNABLE);
     release(&p->lock);
-    Info("========== oscomp init finished! ==========\n");
+    Info("========== init finished! finish running testcase ==========\n");
     return;
 }
