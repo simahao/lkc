@@ -259,7 +259,40 @@ void init_ret(void) {
     struct binprm bprm;
     memset(&bprm, 0, sizeof(bprm));
 
-    proc_current()->tg->group_leader->trapframe->a0 = do_execve("/boot/init", &bprm);
+    // int pid;
+    // vaddr_t stack = 0;
+    mkdir("/dev", 0666);
+    if (openat(AT_FDCWD, "/dev/tty", O_RDWR) < 0) {
+        mknod("/dev/tty", S_IFCHR, CONSOLE << 8);
+        openat(AT_FDCWD, "/dev/tty", O_RDWR);
+    }
+    dup(0);
+    dup(0);
+    for (int i = 0; i < 1; i++) {
+        int ret = do_execve("/read", &bprm);
+        printf("ret=%d\n", ret);
+        // pid = fork();
+        // pid = do_clone(17, stack, 0, 0, 0);
+        // printf("pid=%d\n", pid);
+        // if (pid < 0) {
+        //     printf("fork failed\n");
+        //     do_exit(-1);
+        // }
+        // if (pid == 0) {
+        //     do_execve("/brk", &bprm);
+        //     printf("never reach here");
+        //     do_exit(-1);
+        // } else {
+        //     while (1) {
+        //         if (waitpid(-1, 0, 0) < 0) {
+        //             break;
+        //         }
+        //     }
+        // }
+    }
+    while(1);
+    // shutdown();
+    // proc_current()->tg->group_leader->trapframe->a0 = do_execve("/boot/init", &bprm);
 #endif
 }
 
