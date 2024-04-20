@@ -22,6 +22,7 @@ void runtest();
 
 
 int main(void) {
+    printf("hhhhhhhhhhhhhhhhh\n");
 
     mkdir("/dev", 0666);
     if (openat(AT_FDCWD, "/dev/tty", O_RDWR) < 0) {
@@ -32,7 +33,8 @@ int main(void) {
     dup(0); // stderr
 
 #ifdef RUNTEST
-    runtest();
+    // runtest();
+    printf("aaaaaaaaaaaaaaaaaaaaaaa\n");
     shutdown();
     return 0;
 #else

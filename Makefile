@@ -74,7 +74,7 @@ $(shell touch $(FSIMG)/var/tmp/lmbench)
 
 
 ## 2. Compilation flags
-
+TOOLPREFIX = riscv64-linux-gnu-
 # Try to infer the correct TOOLPREFIX if not set
 ifndef TOOLPREFIX
 TOOLPREFIX := $(shell if riscv64-unknown-elf-objdump -i 2>&1 | grep 'elf64-big' >/dev/null 2>&1; \

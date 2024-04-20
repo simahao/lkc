@@ -28,6 +28,7 @@ void runtest();
 
 
 int main(void) {
+    shutdown();
     print_vma();
     mkdir("/dev", 0666);
     if (openat(AT_FDCWD, "/dev/tty", O_RDWR) < 0) {
@@ -40,23 +41,7 @@ int main(void) {
 
     // after we create tty, we can use printf
     printf("submit start\n");
-    // CHECK(mkdir("/proc", 0666) == 0);
-    // CHECK(mkdir("/var", 0666) == 0);
-    // CHECK(mkdir("/var/tmp", 0666) == 0);
-    // CHECK(mkdir("/var/tmp/lmbench", 0666) == 0);
-    // CHECK(mkdir("/proc/mounts", 0666) == 0);
-    // CHECK(openat(AT_FDCWD, "/proc/meminfo", O_RDWR | O_CREAT) > 0);
-    // CHECK(mkdir("/tmp", 0666) == 0);
-    // CHECK(mknod("/dev/null", S_IFCHR, DEV_NULL << 8) == 0);
-    // CHECK(mknod("/dev/zero", S_IFCHR, DEV_ZERO << 8) == 0);
-    // CHECK(mknod("/dev/cpu_dma_latency", S_IFCHR, DEV_CPU_DMA_LATENCY << 8) == 0);
-    // CHECK(mkdir("/dev/shm", 0666) == 0);
-    // CHECK(mkdir("/dev/misc", 0666) == 0);
-    // CHECK(mknod("/dev/misc/rtc", S_IFCHR, DEV_RTC << 8) == 0);
-
-    printf("ready to run test\n");
     runtest();
-    shutdown();
     return 0;
 }
 

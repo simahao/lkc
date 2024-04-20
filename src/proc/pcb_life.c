@@ -845,7 +845,7 @@ void uvminit(struct mm_struct *mm, uchar *src, uint sz) {
         mem = kzalloc(PGSIZE);
         mappages(pagetable, 0 + i * PGSIZE, PGSIZE, (uint64)mem, PTE_W | PTE_R | PTE_X | PTE_U, COMMONPAGE);
         memmove(mem, src + PGSIZE * i, (PGSIZE > (sz - i * PGSIZE) ? (sz - i * PGSIZE) : PGSIZE));
-        printf("uvminit:%d\n", i);
+        printf("uvminit:%p\n", src+PGSIZE*i);
     }
 
     if (vma_map(mm, 0, 4 * PGSIZE, PERM_READ | PERM_WRITE, VMA_TEXT) < 0) {
