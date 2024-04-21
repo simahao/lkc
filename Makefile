@@ -4,7 +4,6 @@
 # ####### configuration #######
 PLATFORM ?= qemu_virt
 # PLATFORM ?= qemu_sifive_u
-SUBMIT ?= 1
 RUNTEST ?= 1
 ###############################
 
@@ -35,38 +34,38 @@ $(shell mkdir -p $(MNT_DIR))
 $(shell mkdir -p mount_sd) # for sdcard.img
 
 # Initial file in directory, cp these test utilities into fsimg/test
-TEST=user_test kalloctest mmaptest \
-	clock_gettime_test signal_test \
-	writev_test readv_test lseek_test \
-	sendfile_test renameat2_test
+# TEST=user_test kalloctest mmaptest \
+# 	clock_gettime_test signal_test \
+# 	writev_test readv_test lseek_test \
+# 	sendfile_test renameat2_test
 
 # utility in user dir, cp these binaries into fsimg/bin
 BIN=ls echo cat mkdir rawcwd rm shutdown wc kill grep sh sysinfo true
 # cp init into fsimg/boot
 BOOT=init
 
-TESTFILE = $(addprefix $(FSIMG)/, $(TEST))
+# TESTFILE = $(addprefix $(FSIMG)/, $(TEST))
 BINFILE = $(addprefix $(FSIMG)/, $(BIN))
 BOOTFILE = $(addprefix $(FSIMG)/, $(BOOT))
 
-$(shell mkdir -p $(FSIMG)/test)
+# $(shell mkdir -p $(FSIMG)/test)
 $(shell mkdir -p $(FSIMG)/oscomp)
 $(shell mkdir -p $(FSIMG)/bin)
 $(shell mkdir -p $(FSIMG)/boot)
 
 # tests
-$(shell mkdir -p $(FSIMG)/test/libc-test)
-$(shell mkdir -p $(FSIMG)/test/lmbench)
-$(shell mkdir -p $(FSIMG)/test/time-test)
-$(shell mkdir -p $(FSIMG)/test/libc-bench)
-$(shell mkdir -p $(FSIMG)/test/iozone)
-$(shell mkdir -p $(FSIMG)/test/lua)
-$(shell mkdir -p $(FSIMG)/test/netperf)
-$(shell mkdir -p $(FSIMG)/test/iperf)
-$(shell mkdir -p $(FSIMG)/test/netperf)
-$(shell mkdir -p $(FSIMG)/test/cyclictest)
-$(shell mkdir -p $(FSIMG)/test/unixbench)
-$(shell mkdir -p $(FSIMG)/test/lmbench_test)
+# $(shell mkdir -p $(FSIMG)/test/libc-test)
+# $(shell mkdir -p $(FSIMG)/test/lmbench)
+# $(shell mkdir -p $(FSIMG)/test/time-test)
+# $(shell mkdir -p $(FSIMG)/test/libc-bench)
+# $(shell mkdir -p $(FSIMG)/test/iozone)
+# $(shell mkdir -p $(FSIMG)/test/lua)
+# $(shell mkdir -p $(FSIMG)/test/netperf)
+# $(shell mkdir -p $(FSIMG)/test/iperf)
+# $(shell mkdir -p $(FSIMG)/test/netperf)
+# $(shell mkdir -p $(FSIMG)/test/cyclictest)
+# $(shell mkdir -p $(FSIMG)/test/unixbench)
+# $(shell mkdir -p $(FSIMG)/test/lmbench_test)
 
 # tmp
 $(shell mkdir -p $(FSIMG)/var/tmp)
@@ -76,18 +75,18 @@ $(shell touch $(FSIMG)/var/tmp/lmbench)
 ## 2. Compilation flags
 TOOLPREFIX = riscv64-linux-gnu-
 # Try to infer the correct TOOLPREFIX if not set
-ifndef TOOLPREFIX
-TOOLPREFIX := $(shell if riscv64-unknown-elf-objdump -i 2>&1 | grep 'elf64-big' >/dev/null 2>&1; \
-	then echo 'riscv64-unknown-elf-'; \
-	elif riscv64-linux-gnu-objdump -i 2>&1 | grep 'elf64-big' >/dev/null 2>&1; \
-	then echo 'riscv64-linux-gnu-'; \
-	elif riscv64-unknown-linux-gnu-objdump -i 2>&1 | grep 'elf64-big' >/dev/null 2>&1; \
-	then echo 'riscv64-unknown-linux-gnu-'; \
-	else echo "***" 1>&2; \
-	echo "*** Error: Couldn't find a riscv64 version of GCC/binutils." 1>&2; \
-	echo "*** To turn off this error, run 'gmake TOOLPREFIX= ...'." 1>&2; \
-	echo "***" 1>&2; exit 1; fi)
-endif
+# ifndef TOOLPREFIX
+# TOOLPREFIX := $(shell if riscv64-unknown-elf-objdump -i 2>&1 | grep 'elf64-big' >/dev/null 2>&1; \
+# 	then echo 'riscv64-unknown-elf-'; \
+# 	elif riscv64-linux-gnu-objdump -i 2>&1 | grep 'elf64-big' >/dev/null 2>&1; \
+# 	then echo 'riscv64-linux-gnu-'; \
+# 	elif riscv64-unknown-linux-gnu-objdump -i 2>&1 | grep 'elf64-big' >/dev/null 2>&1; \
+# 	then echo 'riscv64-unknown-linux-gnu-'; \
+# 	else echo "***" 1>&2; \
+# 	echo "*** Error: Couldn't find a riscv64 version of GCC/binutils." 1>&2; \
+# 	echo "*** To turn off this error, run 'gmake TOOLPREFIX= ...'." 1>&2; \
+# 	echo "***" 1>&2; exit 1; fi)
+# endif
 
 QEMU = qemu-system-riscv64
 
@@ -148,10 +147,6 @@ ifeq ($(DEBUG_INODE), 1)
 	CFLAGS += -D__DEBUG_INODE__
 endif
 
-ifeq ($(SUBMIT), 1)
-	CFLAGS += -DSUBMIT
-endif
-
 ifeq ($(RUNTEST), 1)
 	CFLAGS += -DRUNTEST
 endif
@@ -189,19 +184,15 @@ SRCS = $(filter-out $(SRCS-BLACKLIST-y),$(SRCS-y))
 ##### PLATFORM ######
 
 ifeq ($(PLATFORM), qemu_virt)
-	QEMUOPTS = -machine virt -bios bootloader/opensbi-qemu -kernel kernel-qemu -m 1G -smp 2 -nographic
-	QEMUOPTS += -drive file=fat32.img,if=none,format=raw,id=x0
+	QEMUOPTS = -machine virt -bios bootloader/opensbi-qemu -kernel kernel-qemu -m 128M -smp 2 -nographic
+	QEMUOPTS += -drive file=sdcard.img,if=none,format=raw,id=x0
 	QEMUOPTS += -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
 	CFLAGS += -DVIRT -DNCPU=2
 endif
 
 ifeq ($(PLATFORM), qemu_sifive_u)
-	QEMUOPTS = -machine sifive_u -bios bootloader/sbi-sifive -kernel kernel-qemu -m 1G -smp 5 -nographic
-	ifeq ($(SUBMIT), 1)
-		QEMUOPTS += -drive file=sdcard.img,if=sd,format=raw
-	else
-		QEMUOPTS += -drive file=fat32.img,if=sd,format=raw
-	endif
+	QEMUOPTS = -machine sifive_u -bios bootloader/sbi-sifive -kernel kernel-qemu -m 128M -smp 5 -nographic
+	QEMUOPTS += -drive file=sdcard.img,if=sd,format=raw
 	CFLAGS += -DSIFIVE_U -DNCPU=5
 endif
 
@@ -221,20 +212,8 @@ local:
 
 all: kernel-qemu
 
-# dst=/mnt
-# sd:
-# 	@if [ ! -d "$(dst)/bin" ]; then sudo mkdir $(dst)/bin; fi
-# 	@sudo cp $(FSIMG)/boot/init $(dst)/
-# 	@sudo cp $(FSIMG)/run-all.sh $(dst)/
-
-sudo:
-	@if ! which sudo > /dev/null; then \
-		apt install sudo; \
-	fi
-
 format:
 	@which clang-format-15 > /dev/null 2>&1 || apt install -y clang-format-15
-# pml_hifive.h is not be formatted by clang-format
 	clang-format-15 -i $(filter %.c, $(SRCS)) $(filter-out include/platform/hifive/pml_hifive.h, $(shell find include -name "*.c" -o -name "*.h"))
 
 kernel: kernel-qemu
@@ -251,11 +230,9 @@ gdb: kernel-qemu .gdbinit
 export CC AS LD OBJCOPY OBJDUMP CFLAGS ASFLAGS LDFLAGS ROOT SCRIPTS USER
 
 # image: user fat32.img
-image: user fat32.img
+image: user sdcard.img
 
 
-# user: oscomp busybox
-# user: apps
 user: oscomp
 	@echo "$(YELLOW)build user:$(RESET)"
 	@cp README.md $(FSIMG)/
@@ -263,41 +240,36 @@ user: oscomp
 	@cp busybox/busybox $(FSIMG)/busybox
 	@mv $(BINFILE) $(FSIMG)/bin/
 	@cp $(BOOTFILE) $(FSIMG)/boot/
-	@mv $(TESTFILE) $(FSIMG)/test/
+# @mv $(TESTFILE) $(FSIMG)/test/
 	@rm -rf $(FSIMG)/oscomp/*
 	@rm -rf $(FSIMG)/mnt/*
 	@mv $(OSCOMPU)/riscv64/* $(FSIMG)/
 	@cp $(OSCOMPU)/src/oscomp/run-all.sh $(FSIMG)/
-# @cp support/* $(FSIMG)/ -r
 
 oscomp:
 	@make -C $(OSCOMPU) -e all CHAPTER=7
 
-fat32.img:
+sdcard.img:
 	@dd if=/dev/zero of=$@ bs=1M count=128
 	@mkfs.vfat -F 32 $@
-	@sudo mount -t vfat $@ $(MNT_DIR)
-	@sudo cp -r $(FSIMG)/* $(MNT_DIR)/
-	@sync $(MNT_DIR) && sudo umount -v $(MNT_DIR)
-	@cp fat32.img sdcard.img
+	@mount -t vfat $@ $(MNT_DIR)
+	@cp -r $(FSIMG)/* $(MNT_DIR)/
+	@sync $(MNT_DIR) && umount -v $(MNT_DIR)
 
-# for sdcard.img(local test)
-mount:
-	@sudo mount -t vfat fat32.img mount_sd
-umount:
-	@sudo umount -v mount_sd
 
-submit: image
-	@riscv64-linux-gnu-objcopy -S -O binary fsimg/submit tmp
-	@xxd -ps tmp > submit
-	@rm tmp
-	@cat submit | ./scripts/convert.sh | ./scripts/code.sh > include/initcode.h
-	@rm submit
+# submit: image
+# 	@riscv64-linux-gnu-objcopy -S -O binary fsimg/submit tmp
+# 	@xxd -ps tmp > submit
+# 	@rm tmp
+# 	@cat submit | ./scripts/convert.sh | ./scripts/code.sh > include/initcode.h
+# 	@rm submit
+runtest: image
+	@./runtest.sh
 
 clean-all: clean
 	-@make -C $(USER)/ clean
 	-@make -C $(OSCOMPU)/ clean
-	-rm fat32.img $(FSIMG)/* -rf
+	-rm sdcard.img $(FSIMG)/* -rf
 
 clean:
 	-rm build/* kernel-qemu $(GENINC) -rf

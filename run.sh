@@ -7,7 +7,7 @@
 function usage() {
     echo "usage: run.sh <machine_type> <gdb>"
     echo "machine_type: virt|sifive_u, virt means generic machine, sifive_u means embemd machine"
-    echo "e.g., run.sh                   start with sifive_u type"
+    echo "e.g., run.sh                   start with virt type"
     echo "      run.sh virt              start with virt"
     echo "      run.sh sifive_u gdb      start with sifive_u and support debug"
     exit 1
@@ -30,13 +30,9 @@ if [[ $# -ge 3 ]]; then
     usage
 fi
 
-make clean-all
-if [[ ! -f ./fat32.img ]]; then
-    make image
-fi
 
 # default value
-OPTION1=qemu_sifive_u
+OPTION1=qemu_virt
 
 if [[ $1 != '' ]]; then
     if [[ $1 == 'sifive' ]]; then
@@ -50,4 +46,4 @@ if [[ $1 != '' ]]; then
         OPTION2="gdb"
     fi
 fi
-make "PLATFORM=${OPTION1}" ${OPTION2}
+make local "PLATFORM=${OPTION1}" ${OPTION2}

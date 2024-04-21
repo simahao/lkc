@@ -44,7 +44,6 @@ int counts = sizeof(tests) / sizeof((tests)[0]);
 char *envp[] = {"PATH=/", 0};
 
 int main(void) {
-    printf("there are %d testcases\n", counts);
     int pid, wpid;
     mkdir("/dev", 0666);
     if (openat(AT_FDCWD, "/dev/tty", O_RDWR) < 0) {
@@ -53,6 +52,7 @@ int main(void) {
     }
     dup(0); // stdout
     dup(0); // stderr
+    printf("there are %d testcases\n", counts);
     for (int i = 0; i < counts; i++) {
         pid = fork();
         if (pid < 0) {

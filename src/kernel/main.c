@@ -114,9 +114,9 @@ void main(uint64 hartid) {
         dma_init();
 #endif
 
-#ifdef SUBMIT
-        extern void oscomp_init(void);
-        oscomp_init();
+#ifdef RUNTEST
+        extern void runtest(void);
+        runtest();
 #else
         //========== First user process =========
         userinit();

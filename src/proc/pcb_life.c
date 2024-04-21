@@ -251,7 +251,7 @@ void init_ret(void) {
     extern struct _superblock fat32_sb;
     fat32_fs_mount(ROOTDEV, &fat32_sb); // initialize fat32 superblock obj and root inode obj.
     proc_current()->cwd = fat32_sb.root->i_op->idup(fat32_sb.root);
-#ifdef SUBMIT
+#ifdef RUNTEST
     Info("======== submit-init return ========\n");
     printfGreen("The initial Memory before execve init : %d pages\n", get_free_mem() / 4096);
     return;
@@ -859,7 +859,7 @@ void uvminit(struct mm_struct *mm, uchar *src, uint sz) {
     }
 }
 
-void oscomp_init(void) {
+void runtest(void) {
     struct proc *p;
     struct tcb *t;
     p = create_proc();
