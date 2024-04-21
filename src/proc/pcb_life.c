@@ -253,7 +253,7 @@ void init_ret(void) {
     proc_current()->cwd = fat32_sb.root->i_op->idup(fat32_sb.root);
 #ifdef RUNTEST
     Info("======== submit-init return ========\n");
-    printfGreen("The initial Memory before execve init : %d pages\n", get_free_mem() / 4096);
+    Info("The initial Memory before execve init : %d pages\n", get_free_mem() / 4096);
     return;
 #else
     struct binprm bprm;
@@ -369,7 +369,6 @@ int do_clone(uint64 flags, vaddr_t stack, uint64 ptid, uint64 tls, uint64 ctid) 
         release(&t->lock);
         return t->tid;
     }
-
     // ==============create proc with group leader=======================
     acquire(&p->lock);
     /* Copy vma */
@@ -380,7 +379,6 @@ int do_clone(uint64 flags, vaddr_t stack, uint64 ptid, uint64 tls, uint64 ctid) 
         release(&np->lock);
         return -1;
     }
-
     // Copy user memory from parent to child.
     if (flags & CLONE_VM) {
         np->mm->pagetable = p->mm->pagetable;

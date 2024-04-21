@@ -1987,7 +1987,7 @@ void alloc_fail(void) {
 }
 
 void shutdown_writeback(void) {
-    printfGreen("mm: %d pages before writeback\n", get_free_mem() / 4096);
+    printf("\nmm: %d pages before writeback\n", get_free_mem() / 4096);
 
     acquire(&inode_table.lock);
     struct inode *ip = NULL;
@@ -2029,7 +2029,7 @@ void shutdown_writeback(void) {
     // // free index table
     // fat32_free_index_table(ip);
 
-    printfGreen("mm: %d pages after writeback\n", get_free_mem() / 4096);
+    printf("mm: %d pages after writeback\n", get_free_mem() / 4096);
     release(&inode_table.lock);
     fat32_fat_bitmap_writeback(ROOTDEV, &fat32_sb);
 }

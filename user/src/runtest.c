@@ -34,7 +34,8 @@ char *tests[] = {
     "wait",
     "waitpid",
     "write",
-    "yield"
+    "yield",
+    "sleep"
 };
 int counts = sizeof(tests) / sizeof((tests)[0]);
 
@@ -52,7 +53,7 @@ int main(void) {
     }
     dup(0); // stdout
     dup(0); // stderr
-    printf("there are %d testcases\n", counts);
+    printf("\nthere are %d testcases\n\n", counts);
     for (int i = 0; i < counts; i++) {
         pid = fork();
         if (pid < 0) {

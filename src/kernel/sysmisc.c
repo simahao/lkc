@@ -39,7 +39,7 @@ struct utsname {
 };
 
 struct utsname sys_ut = {
-    "LKC OS",
+    "CRAY OS",
     "oskernel",
     .release = "1.0",
     .version = "1212",
@@ -130,15 +130,15 @@ uint64 sys_nanosleep(void) {
     // #if defined (SIFIVE_U) || defined (SIFIVE_B)
     //     return 0;
     // #endif
-    // uint64 req;
-    // argaddr(0, &req);
+    uint64 req;
+    argaddr(0, &req);
 
-    // struct timespec ts_buf;
-    // if (copyin(proc_current()->mm->pagetable, (char *)&ts_buf, req, sizeof(ts_buf)) == -1) {
-    //     return -1;
-    // }
+    struct timespec ts_buf;
+    if (copyin(proc_current()->mm->pagetable, (char *)&ts_buf, req, sizeof(ts_buf)) == -1) {
+        return -1;
+    }
 
-    // do_sleep_ns(thread_current(), ts_buf);
+    do_sleep_ns(thread_current(), ts_buf);
     return 0;
 }
 
