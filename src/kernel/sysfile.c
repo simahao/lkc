@@ -618,17 +618,6 @@ uint64 sys_dup3(void) {
     return newfd;
 }
 
-// * 功能：挂载文件系统；
-// * 输入：
-//   - special: 挂载设备；
-//   - dir: 挂载点；
-//   - fstype: 挂载的文件系统类型；
-//   - flags: 挂载参数；
-//   - data: 传递给文件系统的字符串参数，可为NULL；
-// * 返回值：成功返回0，失败返回-1；
-// uint64 sys_mount(void) {
-//     return 0;
-// }
 
 // 功能：打开或创建一个文件；
 // 输入：
@@ -655,8 +644,6 @@ uint64 sys_openat(void) {
 
 
     // 如果是要求创建文件，则调用 create
-    // printf("\no_creat, dec:%d, hex:%#x\n", O_CREAT, O_CREAT);
-    // printf("\nbefore create judge, dec:%d,hex:%#X\n", flags&O_CREAT, flags&O_CREAT);
     if ((flags & O_CREAT) == O_CREAT) {
         if ((ip = assist_icreate(path, dirfd, S_IFREG, 0, 0)) == 0) {
             printf("openat:669\n");
@@ -665,17 +652,9 @@ uint64 sys_openat(void) {
     } else {
         // 否则，我们先调用 find_inode 找到 path 对应的文件 inode 节点
         if ((ip = find_inode(path, dirfd, 0)) == 0) {
-            // if (strcmp(path, "/dev/tty") != 0) {
-            //     printf("not create mode,find inode,no result, path=%s,dirfd=%d\n", path, dirfd);
-            // }
             return -1;
         }
-        // ASSERT(ip->i_op);
         ip->i_op->ilock(ip);
-        // if (ip->i_mode == S_IFDIR && flags != O_RDONLY) {
-        //     fat32_inode_unlock_put(ip);
-        //     return -1;
-        // }
 
         if (((flags & O_DIRECTORY) == O_DIRECTORY) && !S_ISDIR(ip->i_mode)) {
             ip->i_op->iunlock_put(ip);
@@ -690,9 +669,6 @@ uint64 sys_openat(void) {
     }
 
     fd = assist_openat(ip, flags, omode, 0);
-
-    // printfGreen("openat %s end, mm: %d pages\n", path, get_free_mem()/4096);
-    // printfRed("mm : %d pages\n", get_free_mem() / PGSIZE);
     return fd;
 }
 
@@ -712,15 +688,7 @@ uint64 sys_close(void) {
 #ifdef __DEBUG_FS__
     printfCYAN("close : filename : %s, pid %d, fd = %d\n", f->f_tp.f_inode->fat32_i.fname, proc_current()->pid, fd);
 #endif
-
-    // debug ！！！
-    // printfCYAN("close begin: filename : %s, pid %d, fd = %d\n", f->f_tp.f_inode->fat32_i.fname, proc_current()->pid, fd);
-
     generic_fileclose(f);
-
-    // debug ！！！
-    // printfCYAN("close end: filename : %s, pid %d, fd = %d\n", f->f_tp.f_inode->fat32_i.fname, proc_current()->pid, fd);
-    // printfRed("mm : %d pages\n", get_free_mem() / PGSIZE);
     return 0;
 }
 
@@ -751,14 +719,7 @@ uint64 sys_read(void) {
         printfMAGENTA("read : pid %d, fd = %d\n", proc_current()->pid, fd);
     }
 #endif
-    // static int read_cnt = 0;
-    // read_cnt ++;
-    // if(read_cnt%1000==0) {
-    //     printf("sys_read, cnt : %d\n",read_cnt);
-    // }
-    // printfRed("read before, file name : %s, mm: %d pages\n", f->f_tp.f_inode->fat32_i.fname, get_free_mem()/4096);
     int retval = f->f_op->read(f, buf, count);
-    // printfRed("read after, file name : %s, mm: %d pages\n", f->f_tp.f_inode->fat32_i.fname, get_free_mem()/4096);
     return retval;
 }
 
@@ -814,20 +775,10 @@ uint64 sys_linkat(void) {
         return -1;
     }
 
-    // if (fat32_inode_dirlookup(newdp, newname, 0) != 0)
     if (newdp->i_op->idirlookup(newdp, newname, 0) != 0) {
         // 新文件已存在
         return 0;
     }
-
-    // unfinished ! but will not implement
-    // FAT32 don't support hard link
-    // 往 newdp 中 写入一个代表 oldip 的项
-    // TODO()
-    // if ( fat32_dirlink(olddp, newdp) < 0) {
-    //     return -1;
-    // }
-
     return 0;
 }
 
@@ -849,13 +800,10 @@ uint64 sys_unlinkat(void) {
     // ASSERT(flags == 0);
     if (argstr(1, path, MAXPATH) < 0 || __namecmp(path, "/") == 0)
         return -1;
-    // printfRed("unlinkat , %s\n", path);
-    // printf("unlinkat hit = %d name = %s\n",++hit,path);
 
     if ((dp = find_inode(path, dirfd, name)) == 0) {
         return ENOENT;
     }
-    // printf("unlinkat: %d :find inode ok!\n",hit);
     if (__namecmp(name, ".") == 0 || __namecmp(name, "..") == 0) {
         //  error: cannot unlink "." or "..".
         return -1;
@@ -869,7 +817,6 @@ uint64 sys_unlinkat(void) {
         dp->i_op->iunlock_put(dp);
         return -1;
     }
-    // printf("goto here2.\n");
     ip->i_op->ilock(ip);
     if ((flags == 0 && S_ISDIR(ip->i_mode))
         || (flags == AT_REMOVEDIR && !S_ISDIR(ip->i_mode))) {
@@ -884,28 +831,12 @@ uint64 sys_unlinkat(void) {
 
     if (S_ISDIR(ip->i_mode) && !ip->i_op->idempty(ip)) {
         // error: trying to unlink a non-empty directory
-        // printf("ip type : 0x%x  name: %s\n", ip->i_mode, ip->fat32_i.fname);
-        // printf("不会来到这里吧！\n");
         ip->i_op->iunlock_put(ip); //     bug!!!
         dp->i_op->iunlock_put(dp); //     bug!!!
         return -1;
     }
 
     __unlink(dp, ip);
-    /*
-    // --- be replaced by __unlink() ---
-    dp->i_op->ientrydelete(dp, ip);
-    // printf("ok ?\n");
-    assist_unlink(ip);
-    // printf("ok !!\n");
-
-    dp->i_op->iunlock_put(dp); // bug !!!
-                               // dp unlock must after ip unlink
-                               // because we have inode cache!
-                               // fcb delete-> hash delete -> inode unlink(3 steps should be atomic)
-    // ---
-*/
-    // printfRed("unlinkat2, mm : %d pages\n", get_free_mem() / PGSIZE);
     return 0;
 }
 
@@ -1448,74 +1379,27 @@ uint64 sys_statfs(void) {
 // }
 
 static int utimes_common(struct inode *ip, struct timespec *times) {
-    // 	int error;
-    // 	struct iattr newattrs;
-    // 	struct inode *inode = path->dentry->d_inode;
-
-    // 	error = mnt_want_write(path->mnt);
-    // 	if (error)
-    // 		goto out;
-    // if (times && times[0].ts_nsec == UTIME_NOW && times[1].ts_nsec == UTIME_NOW)
-    // 	times = NULL;
-
-    // 	newattrs.ia_valid = ATTR_CTIME | ATTR_MTIME | ATTR_ATIME;
     if (times) {
         // ignore it
         if (times[0].ts_nsec == UTIME_OMIT) {
-            // 			newattrs.ia_valid &= ~ATTR_ATIME;
         } else if (times[0].ts_nsec == UTIME_NOW) {
             ip->i_atime = NS_to_S(TIME2NS(rdtime()));
-            // 			newattrs.ia_atime.tv_sec = times[0].tv_sec;
-            // 			newattrs.ia_atime.tv_nsec = times[0].tv_nsec;
-            // 			newattrs.ia_valid |= ATTR_ATIME_SET;
         } else {
             ip->i_atime = NS_to_S(TIMESEPC2NS(times[0]));
         }
 
         // ignore it
         if (times[1].ts_nsec == UTIME_OMIT) {
-            // 			newattrs.ia_valid &= ~ATTR_MTIME;
         } else if (times[1].ts_nsec == UTIME_NOW) {
             ip->i_mtime = NS_to_S(TIME2NS(rdtime()));
-            // 			newattrs.ia_mtime.tv_sec = times[1].tv_sec;
-            // 			newattrs.ia_mtime.tv_nsec = times[1].tv_nsec;
-            // 			newattrs.ia_valid |= ATTR_MTIME_SET;
         } else {
             ip->i_mtime = NS_to_S(TIMESEPC2NS(times[1]));
         }
-        // 		/*
-        // 		 * Tell inode_change_ok(), that this is an explicit time
-        // 		 * update, even if neither ATTR_ATIME_SET nor ATTR_MTIME_SET
-        // 		 * were used.
-        // 		 */
-        // 		newattrs.ia_valid |= ATTR_TIMES_SET;
     } else {
         ip->i_atime = NS_to_S(TIME2NS(rdtime()));
         ip->i_mtime = NS_to_S(TIME2NS(rdtime()));
-        // 		/*
-        // 		 * If times is NULL (or both times are UTIME_NOW),
-        // 		 * then we need to check permissions, because
-        // 		 * inode_change_ok() won't do it.
-        // 		 */
-        // 		error = -EACCES;
-        //                 if (IS_IMMUTABLE(inode))
-        // 			goto mnt_drop_write_and_out;
-
-        // 		if (!is_owner_or_cap(inode)) {
-        // 			error = inode_permission(inode, MAY_WRITE);
-        // 			if (error)
-        // 				goto mnt_drop_write_and_out;
-        // 		}
     }
     return 0;
-    // 	mutex_lock(&inode->i_mutex);
-    // 	error = notify_change(path->dentry, &newattrs);
-    // 	mutex_unlock(&inode->i_mutex);
-
-    // mnt_drop_write_and_out:
-    // 	mnt_drop_write(path->mnt);
-    // out:
-    // 	return error;
 }
 
 long do_utimes(int dfd, char *filename, struct timespec *times, int flags) {
@@ -1547,23 +1431,6 @@ long do_utimes(int dfd, char *filename, struct timespec *times, int flags) {
         }
         error = utimes_common(ip, times);
     }
-    // error = utimes_common(file->f_tp.f_inode, times);
-    // 		fput(file);
-    // } else {
-
-    // struct path path;
-    // int lookup_flags = 0;
-
-    // if (!(flags & AT_SYMLINK_NOFOLLOW))
-    // 	lookup_flags |= LOOKUP_FOLLOW;
-
-// 		error = user_path_at(dfd, filename, lookup_flags, &path);
-// 		if (error)
-// 			goto out;
-
-// 		error = utimes_common(&path, times);
-// 		path_put(&path);
-// }
 out:
     return error;
 }
@@ -1601,21 +1468,6 @@ uint64 sys_utimensat(void) {
     }
 
     return do_utimes(dirfd, pathname[0] ? pathname : NULL, times_addr ? tstimes : NULL, flags);
-
-    // return -ENOENT;
-    // // ASSERT(0);
-    // printf("welcome to SYS_utimensat\n\n");
-    // struct tcb *t = thread_current();
-    // printf("tp = 0x%x\n", t->trapframe->tp);
-
-    // // set_errno(ERRORCODE);
-    // struct pthread pt;
-    // either_copyin(&pt, 1, t->trapframe->tp, sizeof(pt));
-    // pt.errno_val = 2;
-    // pt.h_errno_val = 2;
-    // either_copyout(1, t->trapframe->tp, &pt, sizeof(pt));
-    // // *(int*)(t->trapframe->tp) = 2;
-    // return 1;
 }
 
 // 功能：change the name or location of a file
@@ -1684,37 +1536,6 @@ uint64 sys_ioctl(void) {
     return ret;
 }
 
-// static void print_stat(struct stat* s) {
-//     printf("st_dev : %x\n", s->st_dev);
-//     printf("st_ino : %x\n", s->st_ino);
-//     printf("st_mode : %x\n", s->st_mode);
-//     printf("st_nlink : %x\n", s->st_nlink);
-//     printf("st_uid : %x\n",s->st_uid);
-//     printf("st_gid : %x\n", s->st_gid);
-//     printf("st_rdev : %x\n", s->st_rdev);
-//     printf("st_size : %x\n", s->st_size);
-//     printf("st_blksize : %x\n", s->st_blksize);
-//     printf("st_blocks : %x\n", s->st_blocks);
-// }
-
-// kbuf.st_dev = ip->i_dev;
-// kbuf.st_ino = ip->i_ino;
-// kbuf.st_mode = ip->i_mode; // not strict
-// kbuf.st_nlink = 1;
-// kbuf.st_uid = ip->i_uid;
-// kbuf.st_gid = ip->i_gid;
-// kbuf.st_rdev = ip->i_rdev;
-// kbuf.st_size = ip->i_size;
-// kbuf.st_blksize = ip->i_sb->s_blocksize;
-// kbuf.st_blocks = ip->i_blocks * ip->i_sb->cluster_size / 512; // assuming out block is 512B
-
-// // for libc-test stat
-// kbuf.st_atim.ts_nsec = 0;
-// kbuf.st_atim.ts_sec = 0;
-// kbuf.st_mtim.ts_nsec = 0;
-// kbuf.st_mtim.ts_sec = 0;
-// kbuf.st_ctim.ts_nsec = 0;
-// kbuf.st_ctim.ts_sec = 0;
 // 功能：获取文件状态；
 // 输入：
 // - dirfd
@@ -1765,10 +1586,6 @@ uint64 sys_fstatat(void) {
     kbuf.st_ctim.ts_sec = 0;
 
     ip->i_op->iunlock(ip);
-    // ip->i_op->iunlock_put(ip);// not nesessary for test
-
-    // printf("name : %s\n", ip->fat32_i.fname);// debug
-    // print_stat(&kbuf);// debug
 
     if (either_copyout(1, statbuf, &kbuf, sizeof(struct stat)) < 0) {
         return -1;

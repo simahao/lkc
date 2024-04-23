@@ -350,71 +350,9 @@ char *strace_proc_name[STRACE_TARGET_NUM] = {
 int is_strace_target(int num) {
     /* trace all proc except sh and init */
     if (proc_current()->pid > 2) {
-        // if (num == SYS_ppoll || num == SYS_read) {
-        //     return 1;
-        // } else {
-        //     return 0;
-        // }
-        // if (num == SYS_execve) {
-        //     return 1;
-        // } else {
-        //     return 0;
-        // }
-        // if (num == SYS_getuid) {
-        //     return 0;
-        // }
-        // if (num == SYS_kill || num == SYS_rt_sigreturn) {
-        //     return 0;
-        // }
-        // if (num == SYS_read || num == SYS_write || num == SYS_lseek || num == SYS_pselect6 || num == SYS_clock_gettime || num == SYS_getrusage) {
-        //     return 0;
-        // }
-        // if (num == SYS_writev || num == SYS_readv) {
-        //     return 0;
-        // }
-        // if(num == SYS_clock_gettime || num == SYS_getrusage || num == SYS_pselect6) {
-        //     return 0;
-        // }
-        // printfYELLOW("syscall num is %d\n", num);
-        // return 1;
-        // if (num == SYS_clock_gettime || num == SYS_nanosleep || num == SYS_clock_nanosleep) {
-        //     return 0;
-        // }
-        // if (num == SYS_read || num == SYS_write) {
-        //     return 0;
-        // }
-        // if (num == SYS_kill || num == SYS_wait4) {
-        //     return 1;
-        // } else {
-        //     return 0;
-        // }
-        // if(num == SYS_msync || num == SYS_mmap || num == SYS_munmap || num == SYS_kill || num == SYS_pselect6 || num == SYS_getrusage || num == SYS_clock_gettime) {
-        //     return 0;
-        // }
-        // if(num==)
-        //     return 1;
-        // else
-        //     return 0;
-        // if(num == SYS_execve || num == SYS_sendfile) {
-        //     return 1;
-        // } else {
-        //     return 0;
-        // }
         return 1;
 
-        // return 0;
-        // if(syscall_filter[num]) {
-        //     return 0;
-        // }
-        // else {
-        //     return 1;
-        // }
     }
-    // for (int i = 0; i < STRACE_TARGET_NUM; i++) {
-    //     if (strncmp(proc_current()->name, strace_proc_name[i], sizeof(strace_proc_name[i])) == 0) {
-    //         return 1;
-    //     }
-    // }
     return 0;
 }
 
@@ -470,17 +408,7 @@ void syscall(void) {
             }
         }
 #endif
-        // int pages_before = atomic_read(&pages_cnt);
-        // uint64 time_before = rdtime();
         t->trapframe->a0 = syscalls[num]();
-        // uint64 time_after = rdtime();
-        // int pages_after = atomic_read(&pages_cnt);
-        // syscall_mm[num] += (pages_after - pages_before);
-        // uint64 time = TIME2NS((time_after - time_before));
-        // syscall_time[num] += time;
-        // if (pages_after != mm_prev)
-        // printfRed("%s, mm : %d\n", syscall_str[num], pages_after);
-        // mm_prev = pages_after;
 
 #ifdef __STRACE__
         if (is_strace_target(num)) {

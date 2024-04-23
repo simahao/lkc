@@ -169,31 +169,6 @@ uint64 sys_execve(void) {
             if (i == 1 && strcmp((char *)cp, "bw_pipe") == 0) {
                 return -1;
             }
-
-            // #include "termios.h"
-            // if (i == 1 && strcmp((char *)cp, "vi") == 0) {
-            //     extern struct termios term;
-            //     term.c_lflag = 0;
-            // }
-
-            // if (i == 4 && (strcmp(path, "./cyclictest") == 0) && strcmp((char *)cp, "-t8") == 0) {
-            //     skip++;
-            //     if (skip == 2) {
-            //         sbi_shutdown();
-            //     }
-            // }
-            // if ((strcmp(path, "entry-dynamic.exe") == 0 || strcmp(path, "entry-static.exe") == 0) && strcmp((char *)cp, "pthread_cancel_points") == 0) {
-            //     return -1;
-            // }
-            // if ((strcmp(path, "entry-dynamic.exe") == 0 || strcmp(path, "entry-static.exe") == 0) && strcmp((char *)cp, "pthread_cancel_sem_wait") == 0) {
-            //     return -1;
-            // }
-            // if ((strcmp(path, "entry-dynamic.exe") == 0 || strcmp(path, "entry-static.exe") == 0) && strcmp((char *)cp, "pthread_condattr_setclock") == 0) {
-            //     return -1;
-            // }
-            // if (strcmp(path, "./busybox") == 0 && strcmp((char *)cp, "grep") == 0) {
-            //     return -1;
-            // }
         }
 
         argv = getphyaddr(proc_current()->mm->pagetable, uargv);
@@ -257,10 +232,8 @@ uint64 sys_sbrk(void) {
     argint(0, &n);
     addr = proc_current()->mm->brk;
     if (growheap(n) < 0) {
-        // printf("free RAM : %d, grow : %d\n", get_free_mem(), n);
         return -1;
     }
-
     return addr;
 }
 
@@ -280,7 +253,6 @@ uint64 sys_brk(void) {
     increment = (intptr_t)newaddr - (intptr_t)oldaddr;
 
     if (growheap(increment) < 0) {
-        // printf("free RAM : %ld, increment : %ld\n", get_free_mem(), increment);
         return -1;
     }
     return newaddr;
@@ -337,10 +309,6 @@ uint64 sys_rt_sigaction(void) {
     // argulong(3, &sigsetsize);
 
     int ret;
-
-    // if (sigsetsize != sizeof(sigset_t))
-    //     return -1;
-
     struct proc *p = proc_current();
     // If act is non-NULL, the new action for signal signum is installed from act
     if (act_addr) {
@@ -357,7 +325,6 @@ uint64 sys_rt_sigaction(void) {
             return -1;
         }
     }
-
     return ret;
 }
 
@@ -414,14 +381,6 @@ uint64 sys_rt_sigreturn(void) {
 
     signal_frame_restore(t, (struct rt_sigframe *)t->trapframe->sp);
     sig_del_set_mask(t->pending.signal, sig_gen_mask(t->sig_ing));
-    // ucontext_t uc_riscv;
-    // struct proc* p = proc_current();
-    // if (copyin(p->mm->pagetable, (char *)&uc_riscv, (uint64)&uc_riscv, sizeof(ucontext_t)) != 0)
-    //     return -1;
-    // if(uc_riscv.uc_mcontext.__gregs[0]) {
-    //     panic("pc not tested\n");
-    // }
-
     return -EINTR; // bug for unixbench(fstime)!!!
 }
 
@@ -451,7 +410,6 @@ uint64 sys_kill(void) {
     return 0;
 }
 
-// int tkill(int tid, sig_t sig);
 uint64 sys_tkill() {
     int tid;
     sig_t signo;
@@ -488,7 +446,6 @@ uint64 sys_tgkill() {
     struct tcb *t;
     if ((t = find_get_tidx(tgid, tid)) == NULL)
         return -1;
-    // release(&t->lock);
 
     // empty signal
     if (signo == 0) {
@@ -523,28 +480,14 @@ uint64 sys_futex() {
     struct proc *p = proc_current();
     int cmd = futex_op & FUTEX_CMD_MASK;
     // ktime_t t;
-    if (timeout_addr && (cmd == FUTEX_WAIT
-                         // cmd == FUTEX_LOCK_PI ||
-                         // cmd == FUTEX_WAIT_BITSET ||
-                         // cmd == FUTEX_WAIT_REQUEUE_PI
-                         )) {
-        // if (unlikely(should_fail_futex(!(futex_op & FUTEX_PRIVATE_FLAG))))
-        //     return -1;
+    if (timeout_addr && (cmd == FUTEX_WAIT)) {
         if (copyin(p->mm->pagetable, (char *)&timeout, timeout_addr, sizeof(struct timespec)) < 0) {
             return -1;
         }
-        // if (!timespec64_valid(&timeout))
-        //     return -1;
-        // t = timespec64_to_ktime(timeout);
-        // if (cmd == FUTEX_WAIT)
-        // 	t = ktime_add_safe(ktime_get(), t);
-        // else if (!(op & FUTEX_CLOCK_REALTIME))
-        // 	t = timens_ktime_to_host(CLOCK_MONOTONIC, t);
     }
     if (cmd == FUTEX_REQUEUE || cmd == FUTEX_CMP_REQUEUE || cmd == FUTEX_CMP_REQUEUE_PI || cmd == FUTEX_WAKE_OP) {
         arguint(3, &val2);
     }
-
     return do_futex(uaddr, futex_op, val, timeout_addr ? &timeout : NULL, uaddr2, val2, val3);
 }
 

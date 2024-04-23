@@ -176,18 +176,9 @@ uint64 sys_clock_gettime(void) {
 
 struct sysinfo {
     long uptime; /* Seconds since boot */
-    // unsigned long loads[3];  /* 1, 5, and 15 minute load averages */
     unsigned long totalram; /* Total usable main memory size */
     unsigned long freeram;  /* Available memory size */
-    // unsigned long sharedram; /* Amount of shared memory */
-    // unsigned long bufferram; /* Memory used by buffers */
-    // unsigned long totalswap; /* Total swap space size */
-    // unsigned long freeswap;  /* Swap space still available */
     unsigned short procs; /* Number of current processes */
-    // unsigned long totalhigh; /* Total high memory size */
-    // unsigned long freehigh;  /* Available high memory size */
-    // unsigned int mem_unit;   /* Memory unit size in bytes */
-    // char _f[20-2*sizeof(long)-sizeof(int)]; /* Padding to 64 bytes */
 };
 
 // int sysinfo(struct sysinfo *info);
@@ -212,11 +203,7 @@ uint64 sys_sysinfo(void) {
 // void syslog(int priority, const char *format, ...);
 uint64 sys_syslog(void) {
     int priority;
-    // char* format;
     argint(0, &priority);
-    // argaddr(1, format);
-    // Log(format);
-
     return 0;
 }
 
@@ -327,12 +314,6 @@ int do_prlimit(struct proc *p, uint32 resource, struct rlimit *new_rlim, struct 
     if (resource >= RLIM_NLIMITS)
         return -EINVAL;
 
-    // if (new_rlim) {
-    // 	if (new_rlim->rlim_cur > new_rlim->rlim_max)
-    // 		return -EINVAL;
-    // 	if (resource == RLIMIT_NOFILE && new_rlim->rlim_max > sysctl_nr_open)
-    // 		return -EPERM;
-    // }
     struct rlimit *rlim = p->rlim + resource;
     if (!retval) {
         if (old_rlim)
@@ -353,86 +334,6 @@ int do_prlimit(struct proc *p, uint32 resource, struct rlimit *new_rlim, struct 
             }
         }
     }
-    // if (res == RLIMIT_STACK) {
-    //     if (oldrl) {
-    //         rl.rlim_cur = p->mm->ustack->len;
-    //         rl.rlim_max = 30 * PGSIZE;
-    //         if (copyout(oldrl, (char*)&rl, sizeof(struct rlimit)) < 0) {
-    //             return -1;
-    //         }
-    //     }
-
-    //     if (newrl) {
-    //         if (copy_from_user(&rl, newrl, sizeof(struct rlimit)) < 0)
-    //             return -1;
-    //         if (mmap_ext_stack(p->mm, rl.rlim_cur) < 0)
-    //             return -1;
-    //     }
-    // } else if (res == RLIMIT_NOFILE) {
-    //     if (oldrl) {
-    //         rl.rlim_cur = p->fdtable->max_nfd;
-    //         rl.rlim_max = p->fdtable->max_nfd;
-    //         if (copyout(oldrl, (char*)&rl, sizeof(struct rlimit)) < 0) {
-    //             return -1;
-    //         }
-    //     }
-
-    //     if (newrl) {
-    //         if (copy_from_user(&rl, newrl, sizeof(struct rlimit)) < 0)
-    //             return -1;
-
-    //         return fdtbl_setmaxnfd(p->fdtable, rl.rlim_cur);
-    //     }
-    // } else {
-    //     debug("ukres %d", res);
-    //     return -1;
-    // }
-
-    // 	if (new_rlim) {
-    // 		if (new_rlim->rlim_cur > new_rlim->rlim_max)
-    // 			return -EINVAL;
-    // 		if (resource == RLIMIT_NOFILE &&
-    // 				new_rlim->rlim_max > sysctl_nr_open)
-    // 			return -EPERM;
-    // 	}
-
-    // 	/* protect tsk->signal and tsk->sighand from disappearing */
-    // 	read_lock(&tasklist_lock);
-    // 	if (!tsk->sighand) {
-    // 		retval = -ESRCH;
-    // 		goto out;
-    // 	}
-
-    // 	rlim = tsk->signal->rlim + resource;
-    // 	task_lock(tsk->group_leader);
-    // 	if (new_rlim) {
-    // 		/* Keep the capable check against init_user_ns until
-    // 		   cgroups can contain all limits */
-    // 		if (new_rlim->rlim_max > rlim->rlim_max &&
-    // 				!capable(CAP_SYS_RESOURCE))
-    // 			retval = -EPERM;
-    // 		if (!retval)
-    // 			retval = security_task_setrlimit(tsk, resource, new_rlim);
-    // 	}
-    // 	if (!retval) {
-    // 		if (old_rlim)
-    // 			*old_rlim = *rlim;
-    // 		if (new_rlim)
-    // 			*rlim = *new_rlim;
-    // 	}
-    // 	task_unlock(tsk->group_leader);
-
-    // 	/*
-    // 	 * RLIMIT_CPU handling. Arm the posix CPU timer if the limit is not
-    // 	 * infite. In case of RLIM_INFINITY the posix CPU timer code
-    // 	 * ignores the rlimit.
-    // 	 */
-    // 	 if (!retval && new_rlim && resource == RLIMIT_CPU &&
-    // 	     new_rlim->rlim_cur != RLIM_INFINITY &&
-    // 	     IS_ENABLED(CONFIG_POSIX_TIMERS))
-    // 		update_rlimit_cpu(tsk, new_rlim->rlim_cur);
-    // out:
-    // read_unlock(&tasklist_lock);
     return retval;
 }
 
@@ -504,7 +405,6 @@ uint64 sys_prlimit64(void) {
     }
 
     release(&p->lock);
-    // put_task_struct(tsk);
     return ret;
 }
 
@@ -518,7 +418,6 @@ void setitimer_REAL_callback(void *ptr) {
     struct proc *p = (struct proc *)ptr;
     sig_t signo = SIGALRM;
 
-// printfCYAN("kill : kill proc %d, signo = %d\n", p->pid, signo); // debug
 #ifdef __DEBUG_SIGNAL__
     printf("send SIGALRM(14) signal to pid : %d\n", p->pid);
 #endif
@@ -526,10 +425,6 @@ void setitimer_REAL_callback(void *ptr) {
 }
 
 int do_setitimer(int which, struct itimerval *value, struct itimerval *ovalue) {
-    // 	struct task_struct *tsk = current;
-    // 	struct hrtimer *timer;
-    // 	ktime_t expires;
-    // struct tcb* t = thread_current();
     struct proc *p = proc_current();
     struct timer_list *timer;
     /*
@@ -540,11 +435,6 @@ int do_setitimer(int which, struct itimerval *value, struct itimerval *ovalue) {
 
     switch (which) {
     case ITIMER_REAL:
-        // This timer counts down in real (i.e., wall clock) time.  At each expiration, a SIGALRM signal is generated.
-        // printfRed("real not tested\n");
-        // again:
-        // 		spin_lock_irq(&tsk->sighand->siglock);
-        // timer = &t->real_timer;
         timer = &p->real_timer;
         if (ovalue) {
             ovalue->it_value = TIME2TIMEVAL(timer->expires);
@@ -565,35 +455,12 @@ int do_setitimer(int which, struct itimerval *value, struct itimerval *ovalue) {
         timer->interval = interval;
 
         int rate = 1;
-        // uint64 time_out = S_to_NS(dirty_writeback_cycle);
         add_timer_atomic(timer, base * rate, setitimer_REAL_callback, (void *)p);
-        // 		if (ovalue) {
-        // 			ovalue->it_value = itimer_get_remtime(timer);
-        // 			ovalue->it_interval
-        // 				= ktime_to_timeval(tsk->signal->it_real_incr);
-        // 		}
-        // 		/* We are sharing ->siglock with it_real_fn() */
-        // 		if (hrtimer_try_to_cancel(timer) < 0) {
-        // 			spin_unlock_irq(&tsk->sighand->siglock);
-        // 			goto again;
-        // 		}
-        // 		expires = timeval_to_ktime(value->it_value);
-        // 		if (expires.tv64 != 0) {
-        // 			tsk->signal->it_real_incr =
-        // 				timeval_to_ktime(value->it_interval);
-        // 			hrtimer_start(timer, expires, HRTIMER_MODE_REL);
-        // 		} else
-        // 			tsk->signal->it_real_incr.tv64 = 0;
-        // 		trace_itimer_state(ITIMER_REAL, value, 0);
-        // 		spin_unlock_irq(&tsk->sighand->siglock);
         break;
     case ITIMER_VIRTUAL:
         printfRed("virtual not tested\n");
-        // 		set_cpu_itimer(tsk, CPUCLOCK_VIRT, value, ovalue);
-        // 		break;
     case ITIMER_PROF:
         printfRed("prof not tested\n");
-        // 		set_cpu_itimer(tsk, CPUCLOCK_PROF, value, ovalue);
         break;
     default:
         return -EINVAL;
@@ -697,10 +564,6 @@ uint64 sys_clock_nanosleep(void) {
     switch (clockid) {
     case CLOCK_MONOTONIC:
         break;
-    // case CLOCK_REALTIME:
-    //     break;
-    // case CLOCK_TAI:
-    //     break;
     default:
         panic("clock_nanosleep, clockid not tested\n");
         break;
