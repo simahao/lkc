@@ -66,10 +66,7 @@ static int check_vma_intersect(struct list_head *vma_head, struct vma *checked_v
 }
 
 static int add_vma_to_vmspace(struct list_head *head, struct vma *vma) {
-    // printfYELLOW("===============\n");
-    // print_vma(head);
     if (check_vma_intersect(head, vma) != 0) {
-        // print_vma(head);
         Log("add_vma_to_vmspace: vma overlap\n");
         ASSERT(0);
         return -1;
@@ -111,12 +108,9 @@ int vma_map_file(struct mm_struct *mm, uint64 va, size_t len, uint64 perm, uint6
     if ((vma = vma_map_range(mm, va, len, perm, type)) == NULL) {
         return -1;
     }
-    // print_vma(&mm->head_vma);
-    // vma->fd = fd;
     vma->offset = offset;
     vma->vm_file = fp;
     fat32_filedup(vma->vm_file);
-    // print_rawfile(vma->vm_file, 0, 0);
     return 0;
 }
 
@@ -198,18 +192,12 @@ int vmspace_unmap(struct mm_struct *mm, vaddr_t va, size_t len) {
         return -1;
     }
 
-    // ASSERT(len % PGSIZE == 0);
     size_t origin_len = len;
     len = PGROUNDUP(len);
 
     if (vma->type == VMA_FILE) {
-        /* if the perm has PERM_SHREAD, call writeback */
         if ((vma->perm & PERM_SHARED) && (vma->perm & PERM_WRITE)) {
-            // if(start == 0x32407000) {
-            // vmprint(mm->pagetable, 1, 0, 0x32406000, 0);
-            // print_vma(&mm->head_vma);
             writeback(mm->pagetable, vma->vm_file, start, origin_len);
-            // }
         }
     }
 
@@ -227,8 +215,6 @@ int vmspace_unmap(struct mm_struct *mm, vaddr_t va, size_t len) {
     uvmunmap(mm->pagetable, start, PGROUNDUP(size) / PGSIZE, 1, 1);
 
     if (size < len) {
-        // print_vma(&mm->head_vma);
-        // size < len: in case the vma has split before
         vmspace_unmap(mm, va + size, len - size);
     }
 
@@ -269,12 +255,7 @@ vaddr_t find_mapping_space(struct mm_struct *mm, vaddr_t start, size_t size) {
     // assert code: make sure the max address is not in pagetable(not mapping)
     pte_t *pte;
     int ret;
-    // acquire(&mm->lock);
     ret = walk(mm->pagetable, max, 0, 0, &pte);
-    // release(&mm->lock);
-    // Log("%p", max);
-    // vmprint(mm->pagetable, 1, 0, 0, 0);
-    // ASSERT(ret == -1 || *pte == 0);
     if (!(ret == -1 || *pte == 0)) {
         panic("this page not map???\n");
     }
@@ -332,8 +313,6 @@ int vmacopy(struct mm_struct *srcmm, struct mm_struct *dstmm) {
     struct vma *pos;
     list_for_each_entry(pos, &srcmm->head_vma, node) {
         if (pos->type == VMA_FILE) {
-            // int vma_map_file(struct proc *p, uint64 va, size_t len, uint64 perm, uint64 type,
-            //                  int fd, off_t offset, struct file *fp) {
             if (vma_map_file(dstmm, pos->startva, pos->size, pos->perm, pos->type,
                              pos->offset, pos->vm_file)
                 < 0) {
@@ -355,11 +334,6 @@ void free_all_vmas(struct mm_struct *mm) {
     // vmprint(mm->pagetable, 1, 0, 0, 0);
     // print_vma(&mm->head_vma);
     list_for_each_entry_safe(pos_cur, pos_tmp, &mm->head_vma, node) {
-        // Warn("%p~%p", pos->startva, pos->size);
-        // print_vma(&mm->head_vma);
-        // if (pos_cur->type == VMA_INTERP) {
-        //     continue;
-        // }
         if (pos_cur->type == VMA_HEAP && pos_cur->size == 0) {
             del_vma_from_vmspace(&mm->head_vma, pos_cur);
             continue;

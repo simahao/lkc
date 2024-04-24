@@ -97,36 +97,17 @@ void *do_mmap(vaddr_t addr, size_t length, int prot, int flags, struct file *fp,
                 del_vma_from_vmspace(&mm->head_vma, vma);
             }
             mapva = addr;
-            // offset = ;
-            // print_vma(&mm->head_vma);
-            // if (walkaddr(mm->pagetable, mapva) != 0) {
-            //     Warn("the addr %p is already mapped", addr);
-            //     return MAP_FAILED;
-            // }
-            // print_vma(&mm->head_vma);
         }
     }
     if (flags & MAP_ANONYMOUS || fp == NULL) {
-        // if (fp == NULL) {
         if (vma_map(mm, mapva, length, mkperm(prot, flags), VMA_ANON) < 0) {
-            // sema_signal(&mm->mmap_sem);
             return MAP_FAILED;
         }
     } else {
         if (vma_map_file(mm, mapva, length, mkperm(prot, flags), VMA_FILE, offset, fp) < 0) {
-            // sema_signal(&mm->mmap_sem);
             return MAP_FAILED;
         }
     }
-    // print_vma(&mm->head_vma);
-    // if (mapva == proc_current()->mm->start_brk) {
-    //     proc_current()->mm->start_brk = mapva + length;
-    //     Log("cur brk is %p", mapva + length);
-    // }
-    // print_vma(&mm->head_vma);
-
-    // print_vma(&mm->head_vma);
-    // sema_signal(&mm->mmap_sem);
     return (void *)mapva;
 }
 
@@ -204,9 +185,6 @@ uint64 sys_mprotect(void) {
             return -1;
         }
     }
-    // printfYELLOW("==========================");
-    // print_vma(&mm->head_vma);
-
     vma->perm = prot;
     return 0;
 }

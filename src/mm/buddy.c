@@ -56,17 +56,20 @@ void mm_init() {
                    (struct page *)PGROUNDUP((uint64)end) + i * PAGES_PER_CPU,
                    (uint64)START_MEM + i * PAGES_PER_CPU * PGSIZE,
                    PAGES_PER_CPU);
+        //PAGES_PER_CPU = (PHYSTOP-START_MEM) / PGSIZE / NCPU
+        //PAGES_PER_CPU = (0x80000000L + 1024 * 1024 * 128 - 0x82800000) / 4096 / 2
+        //              = (0x88000000-0x82800000) / 4096 / 2
+        //              = 92,274,688 / 4096 / 2 = 11264
+        //init_buddy(&mempools[0], 0x8050e00, 0x8280000, 11264)
+        //init_buddy(&mempools[1], 0x8050e00 + 11264, 0x8280000 + 11264 * 4096, 11264)
     }
     Info("buddy system init [ok]\n");
 }
 
 static int cur = 0;
 void init_buddy(struct phys_mem_pool *pool, struct page *start_page, uint64 start_addr, uint64 page_num) {
-    // int mem_size = PGSIZE * page_num;
-    // Log("%d mem size: %dM", cur, mem_size / 1024 / 1024);
-    // Log("%d start_mem: %#x", cur, start_addr);
-    // Log("%d end mem: %#x", cur, start_addr + mem_size);
-    // Log("%d page_num %d", cur, page_num);
+    //init_buddy(&mempools[0], 0x8050e00, 0x8280000, 11264)
+    //init_buddy(&mempools[1], 0x8050e00 + 11264, 0x8280000 + 11264 * 4096, 11264)
     Info("=========Information of memory for CPU %d==========\n", cur);
     Info("%d pagemeta start: %x\n", cur, start_page);
     Info("%d pagemeta end: %x\n", cur, (uint64)start_page + page_num * sizeof(struct page));
@@ -75,8 +78,6 @@ void init_buddy(struct phys_mem_pool *pool, struct page *start_page, uint64 star
     pool->page_metadata = start_page;
     pool->mem_size = PGSIZE * page_num;
 
-    // Log("start_page_metadata: %#x", pool->page_metadata);
-    // Log("start_addr: %#x", pool->start_addr);
     cur++;
 
     /* Init the spinlock */
@@ -105,12 +106,10 @@ void init_buddy(struct phys_mem_pool *pool, struct page *start_page, uint64 star
         page = start_page + page_idx;
         buddy_free_pages(pool, page);
     }
-    // Log("finish initialization");
 
     /* make sure the buddy_free_pages works correctly */
     uint64 memsize = 0;
     for (int i = 0; i <= BUDDY_MAX_ORDER; i++) {
-        // Log("%d order chunks num: %d", i, pool->freelists[i].num);
         memsize += pool->freelists[i].num * PGSIZE * (1 << i);
     }
     Info("memsize: %u MB\n", memsize / 1024 / 1024);

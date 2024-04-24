@@ -80,56 +80,15 @@ void *kmalloc(size_t size) {
             return 0;
         }
     }
-
-    // acquire(&page->lock);
-    // ASSERT(page->count == 0);
     ASSERT(atomic_read(&page->refcnt) == 0);
     atomic_set(&page->refcnt, 1);
-    // page->count = 1;
-    // release(&page->lock);
     void *page_ret = (void *)page_to_pa(page);
-    // if (page_ret != NULL) {
     atomic_sub_return(&pages_cnt, 1 << page->order);
-    // if (atomic_read(&pages_cnt) < PAGES_THRESHOLD) {
-    //     alloc_fail();
-    // }
     if (!atomic_read(&recycling) && atomic_read(&pages_cnt) < PAGES_THRESHOLD) {
         atomic_inc_return(&recycling);
         alloc_fail();
         atomic_dec_return(&recycling);
     }
-    // if(atomic_read(&pages_cnt) < 10000) {
-    //     printf("ready\n");
-    // }
-    // int cnt = 1<< page->order;
-
-    // if(cnt == 4) {
-    //     printfBlue("ready\n");
-    // }
-    // if(cnt == 1) {
-    //     printfRed("prepare\n");
-    // }
-    // if(cnt == 2) {
-    //     printf("page cnt : 2\n");
-    // }
-    // if(cnt == 4096) {
-    //     printf("page cnt : 4096\n");
-    // }
-    // if(cnt == 8) {
-    //     printf("page cnt : 4096\n");
-    // }
-    // if(cnt == 16) {
-    //     printf("page cnt : 16\n");
-    // }
-    // if(cnt == 64) {
-    //     printf("page cnt : 64\n");
-    // }
-    // if(cnt == 4096) {
-    //     printf("alloc, page cnt : 4096\n");
-    // }
-
-    // if (cnt > 2)
-    //     printfRed("kmalloc, page alloc : %d pages \n", cnt);
     return page_ret;
 }
 
@@ -166,54 +125,29 @@ void *kalloc(void) {
     // acquire(&page->lock);
     ASSERT(atomic_read(&page->refcnt) == 0);
     atomic_set(&page->refcnt, 1);
-    // ASSERT(page->count == 0);
-    // page->count = 1;
-    // release(&page->lock);
     void *page_ret = (void *)page_to_pa(page);
-    // if (page_ret != NULL) {
     atomic_sub_return(&pages_cnt, 1 << page->order);
-    // }
 
     if (!atomic_read(&recycling) && atomic_read(&pages_cnt) < PAGES_THRESHOLD) {
         atomic_inc_return(&recycling);
         alloc_fail();
         atomic_dec_return(&recycling);
     }
-
-    // int cnt = 1<< page->order;
-    // if(cnt == 4) {
-    //     printfBlue("ready\n");
-    // }
-    // if(cnt == 2) {
-    //     printf("page cnt : 2\n");
-    // }
-    // if(cnt == 1) {
-    //     printfRed("prepare\n");
-    // }
-    // if(cnt == 16) {
-    //     printf("page cnt : 16\n");
-    // }
-    // if (cnt > 2)
-    //     printfRed("kalloc, page alloc : %d pages \n", cnt);
     return page_ret;
 }
 
 void kfree(void *pa) {
     struct page *page = pa_to_page((uint64)pa);
     acquire(&page->lock);
-    // ASSERT(page->count >= 1);
-    // ASSERT(atomic_read(&page->refcnt) >= 1);
     if (atomic_read(&page->refcnt) < 1) {
         panic("kfree : page ref error\n");
     }
 
-    // page->count--;
     atomic_dec_return(&page->refcnt);
     if (atomic_read(&page->refcnt) >= 1) {
         release(&page->lock);
         return;
     }
-    // ASSERT(page->count == 0);
     ASSERT(atomic_read(&page->refcnt) == 0);
     release(&page->lock);
 
@@ -221,26 +155,14 @@ void kfree(void *pa) {
     int id = get_pages_cpu(page);
     ASSERT(id >= 0 && id < NCPU);
 
-    // if (page != NULL) {
     atomic_add_return(&pages_cnt, 1 << page->order);
-    // }
-
-    // int cnt = 1<< page->order;
-    // if(cnt == 4096) {
-    //     printfBlue("free, page cnt : 4096\n");
-    // }
 
     buddy_free_pages(&mempools[id], page);
 }
 
 void share_page(uint64 pa) {
     struct page *page = pa_to_page(pa);
-    // acquire(&page->lock);
-    // ASSERT(page->count >= 1);
     ASSERT(atomic_read(&page->refcnt) >= 1);
     atomic_inc_return(&page->refcnt);
-    // page->count++;
-
-    // release(&page->lock);
     return;
 }
