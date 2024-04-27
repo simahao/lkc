@@ -35,11 +35,6 @@ sdcard.img:
 1. 生成一个类似于shell的用户程序，我们这里命名为runtest，这个程序主要完成调用sdcard.img中测试用例
 
 ```c
-#define USER
-#include "stddef.h"
-#include "unistd.h"
-#include "stdio.h"
-
 char *tests[] = {
     "brk",
     "chdir",
@@ -134,7 +129,7 @@ rm oo
 
 其中`riscv64-linux-gnu-objcopy -S -O binary fsimg/runtest oo`是将gcc编译好的runtest程序，通过objcopy命令，保存符号表，并且以二进制的方式生成oo文件。`od -v -t x1 -An oo`命令将二进制文件，生成16进制，生成过程中去除地址，并且不要使用'*'来标注重复的信息。`sed -E 's/ (.{2})/0x\1,/g' > include/initcode.h`命令将每一个十六进制的数据前面添加`0x`前缀，字段间通过逗号间隔，然后将结果输出到`include/initcode.h`文件中。
 
-`initcode.h`代码片段如下
+initcode.h代码片段如下
 
 ```c
 0x5d,0x71,0xa2,0xe0,0x86,0xe4,0x26,0xfc,0x4a,0xf8,0x4e,0xf4,0x52,0xf0,0x56,0xec,
@@ -159,22 +154,81 @@ void runtest(void) {
     struct proc *p;
     struct tcb *t;
     p = create_proc();
-    ASSERT(p != NULL);
     t = p->tg->group_leader;
-    ASSERT(t != NULL);
     initproc = p;
-
     // initcode就是我们通过shell脚本生成的initcode.h文件的内容，然后通过uchar initcode数组将头文件的
     // 文件内容加载的数组中，然后通过uvminit函数，将initcode加载到进程对象的内存管理对象上(p->mm)
     uvminit(p->mm, initcode, sizeof(initcode));
-
     t->trapframe->epc = 0;
     t->trapframe->sp = USTACK + 5 * PGSIZE;
-
     safestrcpy(p->name, "/init", 10);
     TCB_Q_changeState(t, TCB_RUNNABLE);
     release(&p->lock);
-    Info("========== init finished! finish running testcase ==========\n");
     return;
 }
 ```
+
+## 如何本地运行和调试
+
+### 本地运行
+
+本地运行依赖于交叉编译环境，qemu仿真环境命令，可以选择自行安装，也可以选择使用大赛的镜像容器。
+
+1. 自行安装
+
+```shell
+https://github.com/riscv-collab/riscv-gnu-toolchain
+```
+
+因为编译交叉编译工具链耗时很长，也可以选择使用编译好的制品。
+
+```shell
+https://github.com/riscv-collab/riscv-gnu-toolchain/tags
+```
+
+在构建好本地的交叉编译工具链之后，安装qemu
+
+```shell
+apt install qemu-system-riscv64
+```
+
+2. 使用大赛的镜像
+
+```shell
+docker pull alphamj/os-contest:v7.7
+```
+
+3. makefile
+
+makefile中的local目标包含了本地运行的所有依赖，通过运行`make local`可以实现重新生成sdcard.img和对应的测试用例，以及操作系统内核文件kernel-qemu
+
+```shell
+local:
+	@make clean-all
+	@make image
+	@make kernel
+```
+
+其中 `make clean-all`会删除sdcard.img和相应的依赖，同时会删除kerenl-qemu和对应的依赖，如果只想删除kernel-qemu和对应的依赖，可以使用`make clean`命令。`make image`命令会编译生成sdcard.img，并将对应的测试用例放置到sdcard.img中，`make kernel`会生成kernel-qemu文件，也就是内核文件，同时利用qemu命令运行生成的内核文件。
+
+对于提交评测的流程，因为评测机已经存在sdcard.img，因此，不需要再次生成，只需要编译好操作系统内核文件即可。我们把默认的目标设置为`make all`。
+
+```shell
+.DEFAULT_GOAL = all
+
+all: kernel-qemu
+```
+
+4. runtest如何使用
+
+在makefile中，有一个目标是`runtest`，这个目标的主要作用是根据`runtest.c`文件的变化，重新生成`initcode.h`文件。
+
+```shell
+runtest: image
+	@./scripts/runtest.sh
+```
+
+因为runtest目标依赖于image，也就是当修改了`runtest.c`文件时，我们需要单独执行`make runtest`命令，这样会生成新的sdcard.img文件，同时也会利用`runtest.sh`脚本自动生成`initcode.h`文件，为后续的`make kernel`做好准备工作。
+
+5. 如何调试
+

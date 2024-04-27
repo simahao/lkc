@@ -32,12 +32,6 @@ $(shell mkdir -p $(GENINC))
 MNT_DIR = build/mnt
 $(shell mkdir -p $(MNT_DIR))
 
-# Initial file in directory, cp these test utilities into fsimg/test
-# TEST=user_test kalloctest mmaptest \
-# 	clock_gettime_test signal_test \
-# 	writev_test readv_test lseek_test \
-# 	sendfile_test renameat2_test
-
 # utility in user dir, cp these binaries into fsimg/bin
 BIN=ls echo cat mkdir rawcwd rm shutdown wc kill grep sh sysinfo true
 # cp init into fsimg/boot
@@ -51,20 +45,6 @@ BOOTFILE = $(addprefix $(FSIMG)/, $(BOOT))
 $(shell mkdir -p $(FSIMG)/oscomp)
 $(shell mkdir -p $(FSIMG)/bin)
 $(shell mkdir -p $(FSIMG)/boot)
-
-# tests
-# $(shell mkdir -p $(FSIMG)/test/libc-test)
-# $(shell mkdir -p $(FSIMG)/test/lmbench)
-# $(shell mkdir -p $(FSIMG)/test/time-test)
-# $(shell mkdir -p $(FSIMG)/test/libc-bench)
-# $(shell mkdir -p $(FSIMG)/test/iozone)
-# $(shell mkdir -p $(FSIMG)/test/lua)
-# $(shell mkdir -p $(FSIMG)/test/netperf)
-# $(shell mkdir -p $(FSIMG)/test/iperf)
-# $(shell mkdir -p $(FSIMG)/test/netperf)
-# $(shell mkdir -p $(FSIMG)/test/cyclictest)
-# $(shell mkdir -p $(FSIMG)/test/unixbench)
-# $(shell mkdir -p $(FSIMG)/test/lmbench_test)
 
 # tmp
 $(shell mkdir -p $(FSIMG)/var/tmp)
@@ -256,12 +236,6 @@ sdcard.img:
 	@sync $(MNT_DIR) && umount -v $(MNT_DIR)
 
 
-# submit: image
-# 	@riscv64-linux-gnu-objcopy -S -O binary fsimg/submit tmp
-# 	@xxd -ps tmp > submit
-# 	@rm tmp
-# 	@cat submit | ./scripts/convert.sh | ./scripts/code.sh > include/initcode.h
-# 	@rm submit
 runtest: image
 	@./scripts/runtest.sh
 
