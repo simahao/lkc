@@ -232,3 +232,25 @@ runtest: image
 
 5. 如何调试
 
+安装依赖库
+
+```shell
+apt-get install libncurses5
+apt-get install libpython2.7
+```
+
+在启动gdb模式前，要执行`make image`保证sdcard.img文件生成，之后运行`make gdb`命令启动gdb模式，这个时候gdb模式下的`-S`参数会主动停止CPU运行，进入到挂起的状态，等待gdb进行连接，这个时候我们需要在新的终端窗口，运行如下命令进行连接。
+
+```shell
+# 调试kernel-qemu(elf)文件
+riscv64-unknown-elf-gdb kernel-qemu
+# 因为内核是在25000进行tcp的监听，所以我们连接该端口
+(gdb) target remote :25000
+Remote debugging using :25000
+# 如果我们想从入口的main函数调试，可以通过下断点的方式进行逐步调试
+(gdb) break main
+# 继续执行下一语句
+(gdb) continue
+```
+
+其中`25000`是启动qemu的时候gdb的参数，根据第一个启动内核窗口的日志决定`25000`具体是多少。通过以上步骤，就可以进行内核代码的调试工作。
