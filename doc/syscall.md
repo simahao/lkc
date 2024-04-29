@@ -1753,29 +1753,777 @@ int main() {
 
 
 ## open,
-- 代码位置
+- 代码位置：src/kernel/sysfile.c
 - 代码
+```C
+//open系统调用是通过sys_openat函数实现
+uint64 sys_openat(void) {
+    char path[MAXPATH];
+    int dirfd, flags, omode, fd;
+    struct inode *ip;
+    argint(0, &dirfd);
+    if (argstr(1, path, MAXPATH) < 0) {
+        return -1;
+    }
+    argint(2, &flags);
+    flags = flags & (~O_LARGEFILE); // bugs!!
+    argint(3, &omode);
+    // 如果是要求创建文件，则调用 create
+    if ((flags & O_CREAT) == O_CREAT) {
+        if ((ip = assist_icreate(path, dirfd, S_IFREG, 0, 0)) == 0) {
+            printf("openat:669\n");
+            return -1;
+        }
+    } else {
+        // 否则，我们先调用 find_inode 找到 path 对应的文件 inode 节点
+        if ((ip = find_inode(path, dirfd, 0)) == 0) {
+            return -1;
+        }
+        ip->i_op->ilock(ip);
+        if (((flags & O_DIRECTORY) == O_DIRECTORY) && !S_ISDIR(ip->i_mode)) {
+            ip->i_op->iunlock_put(ip);
+            return -1;
+        }
+    }
+    if ((S_ISCHR(ip->i_mode) || S_ISBLK(ip->i_mode))
+        && (MAJOR(ip->i_rdev) < 0 || MAJOR(ip->i_rdev) >= NDEV)) {
+        ip->i_op->iunlock_put(ip);
+        return -1;
+    }
+    fd = assist_openat(ip, flags, omode, 0);
+    return fd;
+}
+```
+系统调用 `open` 在 Unix 和类 Unix 系统中用于打开一个文件，并根据指定的标志（flags）和权限（mode）返回一个文件描述符（file descriptor）。这个文件描述符用于后续的文件操作，如读取、写入和文件属性修改。
+
+### 函数原型
+
+在 C 语言中，`open` 的函数原型通常如下：
+
+```c
+#include <fcntl.h>
+
+int open(const char *path, int flags, ... /* mode_t mode */);
+```
+
+### 参数
+
+- `path`：一个以 null 结尾的字符串，指定了要打开的文件的路径。
+- `flags`：一个或多个标志，用于控制文件打开的行为。常见的标志包括 `O_RDONLY`（只读）、`O_WRONLY`（只写）和 `O_RDWR`（读写）。还可以包括其他标志，如 `O_CREAT`（如果文件不存在则创建）、`O_TRUNC`（截断文件大小为 0）等。
+- `mode`（可选）：当 `flags` 包含 `O_CREAT` 时，这个参数指定了创建新文件的权限模式。它是一个模式位掩码，通常由文件权限宏（如 `S_IRUSR`、`S_IWUSR` 等）组合而成。
+
+### 返回值
+
+- 如果调用成功，`open` 返回一个新的文件描述符。
+- 如果调用失败，返回 -1 并设置 `errno` 以指示错误类型。
+
+### 描述
+
+`open` 函数尝试打开 `path` 指定的文件，并根据 `flags` 参数指定的方式打开。如果文件成功打开，`open` 返回一个非负的文件描述符，该文件描述符可以用于后续的文件 I/O 操作。
+
+### 使用场景
+
+- 读取或写入文件。
+- 创建新文件或修改已存在文件的权限。
+
+### 示例
+
+```c
+#include <fcntl.h>
+#include <stdio.h>
+
+int main() {
+    int fd = open("example.txt", O_RDONLY);
+    if (fd == -1) {
+        perror("open failed");
+        return 1;
+    }
+
+    // 使用文件描述符 fd 进行文件操作
+    // ...
+
+    close(fd); // 完成操作后关闭文件
+    return 0;
+}
+```
+
+### 注意事项
+
+- 文件描述符通常是一个整数，用于标识一个打开的文件。
+- 使用 `open` 返回的文件描述符应该在不再需要时使用 `close` 系统调用关闭。
+
+### 相关函数
+
+- `close`：关闭一个文件描述符。
+- `read`：从文件描述符读取数据。
+- `write`：向文件描述符写入数据。
+- `openat`：在指定目录上下文中打开文件。
+
+`open` 是文件 I/O 的基础系统调用，它为后续的文件操作提供了必要的文件描述符。
+
+
 ## pipe,
-- 代码位置
+- 代码位置：src/kernel/sysfile.c
 - 代码
+```c
+// 用于保存2个文件描述符。其中，fd[0]为管道的读出端，fd[1]为管道的写入端。
+uint64 sys_pipe2(void) {
+    uint64 fdarray; // user pointer to array of two integers
+    struct file *rf, *wf;
+    int fd0, fd1;
+    struct proc *p = proc_current();
+
+    argaddr(0, &fdarray);
+    if (pipe_alloc(&rf, &wf) < 0) // 分配两个 pipe 文件
+        return -1;
+    fd0 = -1;
+    if ((fd0 = fdalloc(rf)) < 0 || (fd1 = fdalloc(wf)) < 0) { // 给当前进程分配两个文件描述符，代指那两个管道文件
+        if (fd0 >= 0)
+            p->ofile[fd0] = 0;
+        generic_fileclose(rf);
+        generic_fileclose(wf);
+        return -EMFILE;
+    }
+    if (copyout(p->mm->pagetable, fdarray, (char *)&fd0, sizeof(fd0)) < 0
+        || copyout(p->mm->pagetable, fdarray + sizeof(fd0), (char *)&fd1, sizeof(fd1)) < 0) {
+        p->ofile[fd0] = 0;
+        p->ofile[fd1] = 0;
+        generic_fileclose(rf);
+        generic_fileclose(wf);
+        return -1;
+    }
+    return 0;
+}
+```
+系统调用 `pipe` 在 Unix 和类 Unix 系统中用于创建一个管道（pipe），管道是一种特殊的文件系统对象，用于进程间通信（IPC）。通过管道，一个进程可以向另一个进程发送数据，通常是父子进程之间或相关进程之间的通信。
+
+### 函数原型
+
+在 C 语言中，`pipe` 的函数原型通常如下：
+
+```c
+#include <unistd.h>
+
+int pipe(int fd[2]);
+```
+
+### 参数
+
+- `fd`：一个整数数组，其大小至少为 2。`pipe` 函数将返回两个文件描述符，分别用于管道的读端和写端。
+
+### 返回值
+
+- 如果调用成功，`pipe` 返回 0。
+- 如果调用失败，返回 -1 并设置 `errno` 以指示错误类型。
+
+### 描述
+
+`pipe` 函数创建一个新的管道，并在 `fd` 数组中返回两个文件描述符。`fd[0]` 用于从管道读取数据，`fd[1]` 用于向管道写入数据。管道是半双工的，这意味着数据只能在一个方向上流动，从写入端到读取端。
+
+### 使用场景
+
+- 父子进程之间的通信。
+- 相关进程之间的通信，如使用 `fork` 创建的进程。
+- 实现消息队列或信号传递机制。
+
+### 示例
+
+```c
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+
+int main() {
+    int fds[2];
+    if (pipe(fds) == -1) {
+        perror("pipe failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // 父进程关闭读端，子进程关闭写端
+    close(fds[0]);
+    // 写入管道
+    write(fds[1], "Hello, child process!", 20);
+
+    close(fds[1]); // 父进程关闭写端
+
+    // 子进程从管道读取数据
+    pid_t pid = fork();
+    if (pid == -1) {
+        perror("fork failed");
+        exit(EXIT_FAILURE);
+    } else if (pid == 0) {
+        // 子进程
+        close(fds[1]); // 关闭写端
+        char message[20];
+        // 从管道读取数据
+        read(fds[0], message, 20);
+        printf("Child received: %s\n", message);
+        close(fds[0]); // 子进程关闭读端
+    } else {
+        // 父进程等待子进程结束
+        wait(NULL);
+    }
+
+    return 0;
+}
+```
+
+### 注意事项
+
+- 管道是一个临时文件系统对象，它在创建它的进程的所有文件描述符都被关闭或进程终止后消失。
+- 管道主要用于单向通信。如果需要双向通信，需要创建两个管道。
+- 使用 `pipe` 创建的管道是阻塞的，如果读取端没有进程等待读取数据，写入端的 `write` 调用可能会阻塞。
+
+### 相关函数
+
+- `close`：关闭文件描述符。
+- `read`：从文件描述符读取数据。
+- `write`：向文件描述符写入数据。
+- `fork`：创建一个子进程。
+
+`pipe` 是进程间通信的基础系统调用之一，它为实现父子进程或相关进程间的数据传递提供了一种简单有效的方式。
+
 ## read,
-- 代码位置
+- 代码位置：src/kernel/sysfile.c
 - 代码
+```C
+uint64 sys_read(void) {
+    struct file *f;
+    int count;
+    uint64 buf;
+    argaddr(1, &buf);
+    if (argint(2, &count) < 0) {
+        return -1;
+    }
+    if (argfd(0, 0, &f) < 0)
+        return -1;
+    if (!F_READABLE(f))
+        return -1;
+    int retval = f->f_op->read(f, buf, count);
+    return retval;
+}
+```
+系统调用 `read` 在 Unix 和类 Unix 系统中用于从文件描述符读取数据。当你打开一个文件或者需要从标准输入等地方读取数据时，`read` 调用是非常有用的。
+
+### 函数原型
+
+在 C 语言中，`read` 的函数原型通常如下：
+
+```c
+#include <unistd.h>
+
+ssize_t read(int fd, void *buf, size_t count);
+```
+
+### 参数
+
+- `fd`：一个整数值，表示已打开文件的文件描述符。
+- `buf`：一个指向缓冲区的指针，用于存储从文件描述符 `fd` 读取的数据。
+- `count`：一个 `size_t` 类型的值，指定从文件描述符 `fd` 读取的字节数。
+
+### 返回值
+
+- 如果调用成功，`read` 返回实际读取的字节数。
+- 如果到达文件末尾（EOF），返回 0。
+- 如果调用失败，返回 -1 并设置 `errno` 以指示错误类型。
+
+### 描述
+
+`read` 函数尝试从文件描述符 `fd` 指向的文件或设备中读取最多 `count` 个字节的数据，并将其存储在 `buf` 指向的缓冲区中。如果读取成功，它返回读取的字节数。如果到达文件末尾，则返回 0。如果发生错误，则返回 -1。
+
+### 使用场景
+
+- 从文件中读取数据，用于文件 I/O 操作。
+- 从标准输入读取用户输入。
+
+### 示例
+
+```c
+#include <stdio.h>
+#include <unistd.h>
+
+int main() {
+    int fd = open("example.txt", O_RDONLY);
+    if (fd == -1) {
+        perror("open failed");
+        return 1;
+    }
+
+    char buffer[1024];
+    ssize_t bytes_read = read(fd, buffer, sizeof(buffer));
+    if (bytes_read == -1) {
+        perror("read failed");
+        return 1;
+    }
+
+    // 打印读取的内容
+    printf("Read content: %.*s\n", (int)bytes_read, buffer);
+
+    close(fd);
+    return 0;
+}
+```
+
+### 注意事项
+
+- `read` 调用是阻塞的，如果文件描述符的读缓冲区中没有数据可读，它将一直阻塞直到有数据可读。
+- 如果读取的字节数小于请求的 `count`，可能是因为文件末尾、缓冲区大小限制或底层设备的特性。
+- 使用 `read` 时，需要确保提供的缓冲区足够大，并且检查实际读取的字节数以避免缓冲区溢出。
+
+### 相关函数
+
+- `write`：向文件描述符写入数据。
+- `pread`：从文件描述符读取数据，指定偏移量。
+- `readv`：使用 `iovectors` 读取数据。
+
+`read` 是文件 I/O 和进程间通信中的基本系统调用，它允许程序从各种源读取数据。
+
 ## times,
-- 代码位置
+- 代码位置：src/kernel/sysmisc.c
 - 代码
-## umount,
-- 代码位置
-- 代码
+```C
+uint64 sys_times(void) {
+    uint64 addr;
+    argaddr(0, &addr);
+    struct tms tms_buf;
+    tms_buf.tms_stime = 0;
+    tms_buf.tms_utime = 0;
+    tms_buf.tms_cstime = 0;
+    tms_buf.tms_cutime = 0;
+    if (either_copyout(1, addr, &tms_buf, sizeof(tms_buf)) == -1)
+        return -1;
+    return atomic_read(&ticks);
+}
+```
+系统调用 `times` 在 Unix 和类 Unix 系统中用于获取进程或线程的累计执行时间以及其他与时间相关的信息。这个调用返回了自进程启动以来的CPU时间使用情况，包括用户CPU时间和系统（内核）CPU时间。
+
+### 函数原型
+
+在 C 语言中，`times` 的函数原型通常如下：
+
+```c
+#include <sys/times.h>
+
+clock_t times(struct tms *buf);
+```
+
+### 参数
+
+- `buf`：一个指向 `struct tms` 的指针，该结构用于接收进程或线程的CPU时间信息。
+
+### 返回值
+
+- 如果调用成功，`times` 返回一个 `clock_t` 类型的值，表示进程或线程的总用户CPU时间加系统CPU时间。
+- 如果调用失败，返回 `-1` 并设置 `errno` 以指示错误类型。
+
+### 结构体 `tms`
+
+`struct tms` 定义如下：
+
+```c
+struct tms {
+    clock_t tms_utime;  // 用户CPU时间
+    clock_t tms_stime;  // 系统CPU时间
+    clock_t tms_cutime; // 子进程的用户CPU时间
+    clock_t tms_cstime; // 子进程的系统CPU时间
+};
+```
+
+### 描述
+
+`times` 函数填充了 `buf` 指针指向的 `tms` 结构体，提供了以下信息：
+
+- `tms_utime`：进程或线程实际花费在用户模式下的CPU时间。
+- `tms_stime`：进程或线程实际花费在内核模式下的CPU时间。
+- `tms_cutime`：所有已终止的子进程花费的用户CPU时间的累积。
+- `tms_cstime`：所有已终止的子进程花费的系统CPU时间的累积。
+
+这些时间都是以时钟滴答（clock ticks）为单位的，可以通过 `sysconf(_SC_CLK_TCK)` 获取每个时钟滴答的时间。
+
+### 使用场景
+
+- 性能分析和基准测试，了解进程或线程的CPU使用情况。
+- 确定程序运行的时间，用于计费或者调度。
+
+### 示例
+
+```c
+#include <stdio.h>
+#include <sys/times.h>
+
+int main() {
+    struct tms buf;
+    clock_t start, end;
+
+    start = times(&buf);
+    // 执行一些操作
+    end = times(&buf);
+
+    printf("User time: %ld\n", buf.tms_utime - start);
+    printf("System time: %ld\n", buf.tms_stime - end);
+
+    return 0;
+}
+```
+
+### 注意事项
+
+- `times` 调用返回的时钟滴答数可能会因为时钟分辨率和溢出而受限于其类型 `clock_t` 的大小。
+- 在多线程程序中，`times` 通常只返回关于调用它的线程的信息。
+
+### 相关函数
+
+- `clock_gettime`：提供更精确和灵活的时间获取功能。
+- `getrusage`：获取进程或线程的资源使用情况。
+
+`times` 是一个有用的系统调用，它为性能分析和资源监控提供了基本的时间信息。
+
+
 ## uname,
-- 代码位置
+- 代码位置：src/kernel/sysmisc.c
 - 代码
-## unlink,
-- 代码位置
+```C
+uint64 sys_uname(void) {
+    uint64 addr;
+    uint64 ret = 0;
+    argaddr(0, &addr);
+    if (either_copyout(1, addr, &sys_ut, sizeof(sys_ut)) == -1)
+        ret = -1;
+    return ret;
+}
+```
+系统调用 `uname` 在 Unix 和类 Unix 系统中用于获取当前系统的相关信息，通常是关于操作系统的名称和其他细节。这个调用通常用于获取系统的标识信息，以便应用程序可以根据特定的操作系统特性进行调整。
+
+### 函数原型
+
+在 C 语言中，`uname` 的函数原型通常如下：
+
+```c
+#include <sys/utsname.h>
+
+int uname(struct utsname *buf);
+```
+
+### 参数
+
+- `buf`：一个指向 `struct utsname` 的指针，该结构用于接收系统信息。
+
+### 返回值
+
+- 如果调用成功，`uname` 返回 0。
+- 如果调用失败，返回 -1 并设置 `errno` 以指示错误类型。
+
+### 结构体 `utsname`
+
+`struct utsname` 定义如下：
+
+```c
+struct utsname {
+    char sysname[65];    // 操作系统的名称
+    char nodename[65];   // 网络名称（通常与hostname相同）
+    char release[65];    // 系统版本
+    char version[65];    // 系统版本信息
+    char machine[65];    // 硬件类型
+    char domainname[65]; // DNS 主机域名（如果配置了）
+};
+```
+
+### 描述
+
+`uname` 函数填充了 `buf` 指针指向的 `utsname` 结构体，提供了系统的相关信息，包括但不限于：
+
+- `sysname`：操作系统的名称，如 "Linux"。
+- `nodename`：系统的网络名称，通常与主机名相同。
+- `release`：系统的发行版本。
+- `version`：系统的版本信息。
+- `machine`：系统的硬件类型，如 "x86_64"。
+- `domainname`：系统的 DNS 主机域名。
+
+### 使用场景
+
+- 显示系统的关于信息。
+- 在日志记录中包含系统的标识信息。
+- 根据操作系统的特性调整应用程序的行为。
+
+### 示例
+
+```c
+#include <stdio.h>
+#include <sys/utsname.h>
+
+int main() {
+    struct utsname buf;
+    if (uname(&buf) == -1) {
+        perror("uname failed");
+        return 1;
+    }
+
+    printf("System information:\n");
+    printf("  System Name: %s\n", buf.sysname);
+    printf("  Node Name: %s\n", buf.nodename);
+    printf("  Release: %s\n", buf.release);
+    printf("  Version: %s\n", buf.version);
+    printf("  Machine: %s\n", buf.machine);
+    printf("  Domain Name: %s\n", buf.domainname);
+
+    return 0;
+}
+```
+
+### 注意事项
+
+- `uname` 调用通常用于获取关于操作系统的静态信息，这些信息在系统启动后通常不会改变。
+
+### 相关函数
+
+- `gethostname`：获取系统的主机名。
+
+`uname` 是一个有用的系统调用，它为应用程序提供了一种获取当前运行的操作系统信息的方法。这对于需要根据不同操作系统特性进行适配的应用程序尤其重要。
+
+## unlink
+- 代码位置：src/kernel/sysfile.c
 - 代码
-## wait,
-- 代码位置
+```C
+uint64 sys_unlinkat(void) {
+    struct inode *ip, *dp;
+    char name[NAME_LONG_MAX], path[MAXPATH];
+    int dirfd, flags;
+    argint(0, &dirfd);
+
+    argint(2, &flags);
+    if (argstr(1, path, MAXPATH) < 0 || __namecmp(path, "/") == 0)
+        return -1;
+    if ((dp = find_inode(path, dirfd, name)) == 0) {
+        return ENOENT;
+    }
+    if (__namecmp(name, ".") == 0 || __namecmp(name, "..") == 0) {
+        return -1;
+    }
+    dp->i_op->ilock(dp);
+    if ((ip = dp->i_op->idirlookup(dp, name, 0)) == 0) {
+        dp->i_op->iunlock_put(dp);
+        return -1;
+    }
+    ip->i_op->ilock(ip);
+    if ((flags == 0 && S_ISDIR(ip->i_mode))
+        || (flags == AT_REMOVEDIR && !S_ISDIR(ip->i_mode))) {
+        ip->i_op->iunlock_put(ip);
+        dp->i_op->iunlock_put(dp);
+        return -1;
+    }
+    if (ip->i_nlink < 1) {
+        panic("unlink: nlink < 1");
+    }
+    if (S_ISDIR(ip->i_mode) && !ip->i_op->idempty(ip)) {
+        ip->i_op->iunlock_put(ip);
+        dp->i_op->iunlock_put(dp);
+        return -1;
+    }
+    __unlink(dp, ip);
+    return 0;
+}
+```
+系统调用 `unlink` 在 Unix 和类 Unix 系统中用于删除文件或目录。这个调用通常由文件系统管理层使用，以从文件系统中移除文件或目录的条目。
+
+### 函数原型
+
+在 C 语言中，`unlink` 的函数原型通常如下：
+
+```c
+#include <unistd.h>
+
+int unlink(const char *path);
+```
+
+### 参数
+
+- `path`：一个以 null 结尾的字符串，指定了要删除的文件或目录的路径。
+
+### 返回值
+
+- 如果调用成功，`unlink` 返回 0。
+- 如果调用失败，返回 -1 并设置 `errno` 以指示错误类型。
+
+### 描述
+
+`unlink` 函数尝试删除 `path` 指定的文件或目录。如果 `path` 指向一个文件，该文件将被删除。如果 `path` 指向一个目录，只有当目录为空时，目录才会被删除。
+
+### 使用场景
+
+- 删除不再需要的文件。
+- 清理临时文件。
+- 在程序结束时删除创建的文件。
+
+### 示例
+
+```c
+#include <stdio.h>
+#include <unistd.h>
+
+int main() {
+    const char *path = "example.txt";
+    if (unlink(path) == -1) {
+        perror("unlink failed");
+        return 1;
+    }
+    printf("File '%s' deleted successfully.\n", path);
+    return 0;
+}
+```
+
+### 注意事项
+
+- `unlink` 只能删除文件系统中的条目，它不会删除正在使用的文件或目录。
+- 如果文件正在被使用（例如，已经被打开），`unlink` 会失败，并且 `errno` 将被设置为 `EBUSY`。
+- `unlink` 不能删除非空目录。要删除非空目录，需要使用 `rmdir` 或 `remove`（在某些系统中）。
+
+### 相关函数
+
+- `remove`：在某些系统中，`remove` 可以删除文件和非空目录。
+- `rmdir`：删除空目录。
+- `unlinkat`：与 `unlink` 类似，但允许在指定目录文件描述符的上下文中删除文件或目录。
+
+`unlink` 是文件系统操作中的一个重要系统调用，它允许用户和程序在不再需要时清理文件和目录。
+
+
+## wait
+- 代码位置：src/kernel/sysproc.c
 - 代码
+```C
+int waitpid(pid_t pid, uint64 status, int options) {
+    struct proc *p = proc_current();
+    if (pid < -1)
+        pid = -pid;
+    ASSERT(pid != 0);
+    if (nochildren(p)) {
+        return -1;
+    }
+    if (proc_killed(p)) {
+        return -1;
+    }
+    while (1) {
+        sema_wait(&p->sem_wait_chan_parent);
+        struct proc *p_child = NULL;
+        struct proc *p_tmp = NULL;
+        struct proc *p_first = firstchild(p);
+        int flag = 1;
+        list_for_each_entry_safe_given_first(p_child, p_tmp, p_first, sibling_list, flag) {
+            if (pid > 0 && p_child->pid == pid) {
+                sema_wait(&p_child->sem_wait_chan_self);
+            }
+            acquire(&p_child->lock);
+            if (p_child->state == PCB_ZOMBIE) {
+                pid = p_child->pid;
+                if (status != 0 && copyout(p->mm->pagetable, status, (char *)&(p_child->exit_state), sizeof(p_child->exit_state)) < 0) {
+                    release(&p_child->lock);
+                    return -1;
+                }
+                free_proc(p_child);
+                acquire(&p->lock);
+                deleteChild(p, p_child);
+                release(&p->lock);
+                release(&p_child->lock);
+                return pid;
+            }
+            release(&p_child->lock);
+        }
+        printf("%d\n", p->pid);
+        panic("waitpid : invalid wakeup for semaphore!");
+    }
+}
+
+uint64 sys_wait4(void) {
+    pid_t p;
+    uint64 status;
+    int options;
+    argint(0, &p);
+    argaddr(1, &status);
+    argint(2, &options);
+
+    return waitpid(p, status, options);
+}
+```
+系统调用 `wait` 在 Unix 和类 Unix 系统中用于等待一个或多个子进程结束。这个调用通常由父进程使用，以确定其子进程的状态。`wait` 调用可以挂起父进程的执行，直到一个子进程终止或发生其他条件。
+
+### 函数原型
+
+在 C 语言中，`wait` 的函数原型通常如下：
+
+```c
+#include <sys/types.h>
+#include <sys/wait.h>
+
+pid_t wait(int *status);
+```
+
+### 参数
+
+- `status`：一个整数指针，用于接收子进程的状态信息。如果不需要状态信息，可以传递 `NULL`。
+
+### 返回值
+
+- 返回终止子进程的进程标识符（PID）。
+- 如果调用失败，返回 -1 并设置 `errno` 以指示错误类型。
+
+### 描述
+
+`wait` 函数使调用它的父进程挂起，直到以下条件之一发生：
+
+1. 至少有一个子进程已经终止。
+2. 发生一个未被忽略的信号。
+
+如果 `status` 不是 `NULL`，子进程的终止状态将被存储在 `status` 指向的位置。状态信息通常包含子进程的退出代码、是否因为信号而终止以及相关的信号信息。
+
+### 使用场景
+
+- 父进程等待子进程完成。
+- 收集子进程的退出状态。
+
+### 示例
+
+```c
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+int main() {
+    pid_t pid = fork();
+    if (pid == -1) {
+        perror("fork failed");
+        return 1;
+    } else if (pid == 0) {
+        // 子进程
+        exit(42); // 子进程退出并返回状态码 42
+    } else {
+        // 父进程
+        int status;
+        pid_t child_pid = wait(&status);
+        if (child_pid == -1) {
+            perror("wait failed");
+            return 1;
+        }
+        if (WIFEXITED(status)) {
+            printf("Child process exited with status %d\n", WEXITSTATUS(status));
+        }
+    }
+    return 0;
+}
+```
+
+### 注意事项
+
+- `wait` 只能等待子进程，不能等待父进程或兄弟进程。
+- 如果有多个子进程，`wait` 将返回第一个终止的子进程的状态。
+
+### 相关函数
+
+- `waitpid`：类似于 `wait`，但允许指定要等待的子进程的 PID。
+- `waitid`：一个更通用的等待调用，允许等待特定的子进程或进程组。
+- `WIFEXITED`、`WEXITSTATUS`、`WIFSIGNALED` 等宏：用于解释 `wait` 返回的状态信息。
+
+`wait` 是进程控制和进程间通信中的一个重要系统调用，它允许父进程同步其子进程的执行，并获取子进程的退出状态。
+
 ## waitpid,
 - 代码位置
 - 代码
@@ -1795,3 +2543,6 @@ int main() {
 ```C
 未实现
 ```
+## umount
+- 代码位置：src/kernel/sysfile.c
+- 代码

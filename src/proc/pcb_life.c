@@ -559,9 +559,6 @@ int waitpid(pid_t pid, uint64 status, int options) {
             }
             acquire(&p_child->lock);
             if (p_child->state == PCB_ZOMBIE) {
-                // if(p==initproc)
-                //     printfRed("唤醒,pid : %d, %d\n",p_child->pid, ++cnt_wakeup); // debug
-                // ASSERT(p_child->pid!=SHELL_PID);
                 pid = p_child->pid;
                 if (status != 0 && copyout(p->mm->pagetable, status, (char *)&(p_child->exit_state), sizeof(p_child->exit_state)) < 0) {
                     release(&p_child->lock);
@@ -584,10 +581,6 @@ int waitpid(pid_t pid, uint64 status, int options) {
             release(&p_child->lock);
         }
         printf("%d\n", p->pid);
-        // printf("%d\n", p->sem_wait_chan_parent.value);
-        // if(p==initproc) {
-        //     procChildrenChain(initproc);
-        // }
         panic("waitpid : invalid wakeup for semaphore!");
     }
 }
