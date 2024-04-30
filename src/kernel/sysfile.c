@@ -646,7 +646,6 @@ uint64 sys_openat(void) {
     // 如果是要求创建文件，则调用 create
     if ((flags & O_CREAT) == O_CREAT) {
         if ((ip = assist_icreate(path, dirfd, S_IFREG, 0, 0)) == 0) {
-            printf("openat:669\n");
             return -1;
         }
     } else {

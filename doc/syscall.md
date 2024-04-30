@@ -194,7 +194,6 @@ void generic_fileclose(struct file *f) {
 uint64 sys_close(void) {
     int fd;
     struct file *f;
-
     if (argfd(0, &fd, &f) < 0) {
         return -1;
     }
@@ -1410,7 +1409,7 @@ int main() {
 `mkdir` 是一个基本的系统调用，它在文件系统操作中非常重要，用于创建和管理目录结构。
 
 
-## mmap,
+## mmap
 - 代码位置：src/mm/mmap.c
 - 代码
 ```C
@@ -1649,7 +1648,6 @@ uint64 sys_openat(void) {
     argint(3, &omode);
     if ((flags & O_CREAT) == O_CREAT) {
         if ((ip = assist_icreate(path, dirfd, S_IFREG, 0, 0)) == 0) {
-            printf("openat:669\n");
             return -1;
         }
     } else {
@@ -1752,7 +1750,7 @@ int main() {
 `openat` 是一个有用的系统调用，它提供了一种更加灵活和安全的方式来打开文件，特别是在需要处理相对路径或在不同的目录上下文中工作时。
 
 
-## open,
+## open
 - 代码位置：src/kernel/sysfile.c
 - 代码
 ```C
@@ -1862,7 +1860,7 @@ int main() {
 `open` 是文件 I/O 的基础系统调用，它为后续的文件操作提供了必要的文件描述符。
 
 
-## pipe,
+## pipe
 - 代码位置：src/kernel/sysfile.c
 - 代码
 ```c
@@ -1984,7 +1982,7 @@ int main() {
 
 `pipe` 是进程间通信的基础系统调用之一，它为实现父子进程或相关进程间的数据传递提供了一种简单有效的方式。
 
-## read,
+## read
 - 代码位置：src/kernel/sysfile.c
 - 代码
 ```C
@@ -2079,7 +2077,7 @@ int main() {
 
 `read` 是文件 I/O 和进程间通信中的基本系统调用，它允许程序从各种源读取数据。
 
-## times,
+## times
 - 代码位置：src/kernel/sysmisc.c
 - 代码
 ```C
@@ -2180,7 +2178,7 @@ int main() {
 `times` 是一个有用的系统调用，它为性能分析和资源监控提供了基本的时间信息。
 
 
-## uname,
+## uname
 - 代码位置：src/kernel/sysmisc.c
 - 代码
 ```C
@@ -2524,25 +2522,179 @@ int main() {
 
 `wait` 是进程控制和进程间通信中的一个重要系统调用，它允许父进程同步其子进程的执行，并获取子进程的退出状态。
 
-## waitpid,
-- 代码位置
-- 代码
-## write,
-- 代码位置
-- 代码
-## yield,
-- 代码位置
-- 代码
-## sleep
-- 代码位置
-- 代码
 
-## mount
+## waitpid
+- 代码位置：src/kernel/sysproc.c
+- 代码
+参考wait章节
+
+
+## write
 - 代码位置：src/kernel/sysfile.c
 - 代码
 ```C
-未实现
+uint64 sys_write(void) {
+    struct file *f;
+    int n, fd;
+    uint64 p;
+    argaddr(1, &p);
+    argint(2, &n);
+    if (argfd(0, &fd, &f) < 0)
+        return -1;
+    if (!F_WRITEABLE(f))
+        return -1;
+    return f->f_op->write(f, p, n);
+}
 ```
+系统调用 `write` 在 Unix 和类 Unix 系统中用于向文件描述符写入数据。这个调用是文件 I/O 的基本操作之一，允许进程向文件、设备或者套接字等输出数据。
+
+### 函数原型
+
+在 C 语言中，`write` 的函数原型通常如下：
+
+```c
+#include <unistd.h>
+
+ssize_t write(int fd, const void *buf, size_t count);
+```
+
+### 参数
+
+- `fd`：一个整数值，表示已打开文件的文件描述符。
+- `buf`：一个指向数据缓冲区的指针，包含了要写入的数据。
+- `count`：一个 `size_t` 类型的值，指定要写入的字节数。
+
+### 返回值
+
+- 如果调用成功，`write` 返回实际写入的字节数。
+- 如果调用失败，返回 -1 并设置 `errno` 以指示错误类型。
+
+### 描述
+
+`write` 函数尝试向文件描述符 `fd` 指向的文件或设备写入 `count` 个字节的数据，这些数据位于 `buf` 指向的缓冲区中。如果写入成功，它返回写入的字节数。如果发生错误，则返回 -1。
+
+### 使用场景
+
+- 向文件写入数据，用于文件 I/O 操作。
+- 向标准输出或标准错误输出发送数据。
+
+### 示例
+
+```c
+#include <stdio.h>
+#include <unistd.h>
+
+int main() {
+    int fd = open("example.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (fd == -1) {
+        perror("open failed");
+        return 1;
+    }
+
+    const char *message = "Hello, World!";
+    ssize_t bytes_written = write(fd, message, strlen(message));
+    if (bytes_written == -1) {
+        perror("write failed");
+        return 1;
+    }
+
+    close(fd);
+    return 0;
+}
+```
+
+### 注意事项
+
+- `write` 调用是阻塞的，如果文件描述符的写缓冲区已满，它将一直阻塞直到有足够的空间。
+- 对于某些特殊文件或设备，如终端或套接字，`write` 的行为可能与常规文件不同。
+
+### 相关函数
+
+- `read`：从文件描述符读取数据。
+- `open`：打开一个文件并返回一个文件描述符。
+- `close`：关闭一个文件描述符。
+
+`write` 是一个基本的系统调用，它为文件 I/O 和进程间通信提供了一种将数据发送到文件或设备的方法。
+
+## yield
+- 代码位置：src/proc/sched.c
+- 代码
+```C
+void thread_yield(void) {
+    struct tcb *t = thread_current();
+    acquire(&t->lock);
+    TCB_Q_changeState(t, TCB_RUNNABLE);
+    thread_sched();
+    release(&t->lock);
+}
+```
+系统调用 `yield` 在 Unix 和类 Unix 系统中用于提示操作系统调度器让出当前进程的 CPU 时间片，允许其他就绪状态的进程运行。这个调用通常用于多线程编程中，当一个线程或进程希望放弃其剩余的时间片时。
+
+### 函数原型
+
+在 C 语言中，`yield` 的函数原型通常如下：
+
+```c
+#include <sched.h>
+
+int sched_yield(void);
+```
+
+### 参数
+
+`sched_yield` 函数不接受任何参数。
+
+### 返回值
+
+- 如果调用成功，`sched_yield` 返回 0。
+- 如果调用失败，返回 -1 并设置 `errno` 以指示错误类型。
+
+### 描述
+
+`sched_yield` 函数使当前线程放弃其对 CPU 的控制，允许相同优先级的其他线程运行。如果当前线程是唯一就绪的线程，它可能立即继续执行。当调用线程再次变得可运行时，它将有机会被调度器重新调度。
+
+### 使用场景
+
+- 在多线程程序中，当一个线程完成了某些工作或者正在等待某些事件时，可以主动让出 CPU 时间片。
+- 在实时系统中，当一个低优先级的线程获得了 CPU 控制权，而此时有一个高优先级的线程变为可运行状态，低优先级的线程可以主动让出 CPU。
+
+### 示例
+
+```c
+#include <stdio.h>
+#include <sched.h>
+
+int main() {
+    if (sched_yield() == -1) {
+        perror("sched_yield failed");
+        return 1;
+    }
+    printf("Yielded control of the CPU.\n");
+    return 0;
+}
+```
+
+### 注意事项
+
+- `sched_yield` 只影响调用它的线程或进程。
+- 调用 `sched_yield` 并不保证当前线程一定会被挂起，它只是提供了一个让出 CPU 的机会。
+
+### 相关函数
+
+- `sleep`：暂停执行指定的秒数。
+- `nanosleep`：暂停执行指定的纳秒数。
+
+`sched_yield` 是一个有用的系统调用，它为多线程程序提供了一种机制，允许线程在适当的时候主动让出 CPU 时间片，从而提高程序的整体响应性和公平性。
+
+
+## sleep
+- 代码位置
+- 代码
+参照gettimeofday系统调用
+
+## mount
+- 代码位置：src/kernel/sysfile.c
+- 代码：未实现
 ## umount
 - 代码位置：src/kernel/sysfile.c
-- 代码
+- 代码：未实现

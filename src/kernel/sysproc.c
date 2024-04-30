@@ -114,31 +114,28 @@ sys_wait4(void) {
 extern int sigmask_limit;
 uint64 sys_execve(void) {
     struct binprm bprm;
-    // struct proc *p = proc_current();
-    // Log("%d", p->pid);
     memset(&bprm, 0, sizeof(struct binprm));
 
     char path[MAXPATH];
     vaddr_t uargv, uenvp;
     paddr_t argv, envp;
     vaddr_t temp;
-    // printfGreen("execve begin, mm: %d pages\n", get_free_mem()/4096);
 
     /* fetch the path str */
     if (argstr(0, path, MAXPATH) < 0) {
         return -1;
     }
 
-    if (strcmp(path, "./cyclictest") == 0 || strcmp(path, "./hackbench") == 0) {
-        // Log("hit stack!");
-        bprm.stack_limit = 1;
-    }
-    if (strcmp(path, "libc-bench") == 0) {
-        sigmask_limit = 1;
-    } else {
-        sigmask_limit = 0;
-    }
+    // if (strcmp(path, "./cyclictest") == 0 || strcmp(path, "./hackbench") == 0) {
+    //     bprm.stack_limit = 1;
+    // }
+    // if (strcmp(path, "libc-bench") == 0) {
+    //     sigmask_limit = 1;
+    // } else {
+    //     sigmask_limit = 0;
+    // }
 
+    sigmask_limit = 0;
     /* fetch the paddr of char **argv and char **envp */
     argaddr(1, &uargv);
     argaddr(2, &uenvp);
@@ -206,8 +203,6 @@ uint64 sys_execve(void) {
         char *sh_argv[10] = {"/busybox/busybox", "sh", path};
         for (int i = 1; i < bprm.argc; i++) {
             sh_argv[i + 2] = (char *)getphyaddr(proc_current()->mm->pagetable, (vaddr_t)((char **)argv)[i]);
-            // sh_argv[i + 2] = (char *)(argv + sizeof(vaddr_t) * i);
-            // fetchaddr(uargv + sizeof(vaddr_t) * i, (vaddr_t *)&sh_argv[i + 2]);
         }
         bprm.sh = 1;
         bprm.argv = sh_argv;
@@ -222,7 +217,6 @@ uint64 sys_execve(void) {
     } else {
         return ret;
     }
-    // return do_execve(path, &bprm);
 }
 
 uint64 sys_sbrk(void) {
