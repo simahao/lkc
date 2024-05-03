@@ -277,8 +277,6 @@ void thread_forkret(void) {
     if (thread_current() == initproc->tg->group_leader) {
         init_ret();
     }
-    // printfRed("tid : %d , name : %s forkret\n", thread_current()->tid, thread_current()->name);// debug
-
     // trapframe_print(thread_current()->trapframe);// debug
     proc_current()->last_in = proc_current()->last_out = rdtime();
     thread_usertrapret();
@@ -836,7 +834,6 @@ void uvminit(struct mm_struct *mm, uchar *src, uint sz) {
         mem = kzalloc(PGSIZE);
         mappages(pagetable, 0 + i * PGSIZE, PGSIZE, (uint64)mem, PTE_W | PTE_R | PTE_X | PTE_U, COMMONPAGE);
         memmove(mem, src + PGSIZE * i, (PGSIZE > (sz - i * PGSIZE) ? (sz - i * PGSIZE) : PGSIZE));
-        printf("uvminit:%p\n", src+PGSIZE*i);
     }
 
     if (vma_map(mm, 0, 4 * PGSIZE, PERM_READ | PERM_WRITE, VMA_TEXT) < 0) {

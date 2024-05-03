@@ -1,7 +1,84 @@
-# CRAY Linux
+# CRAY
 
-## 评测流程
+## 项目简介
 
+本项目基于LostWakeupOS，针对部分程序和脚本进行调整，调整的内容主要包含以下2个方面
+1. makefile的重构
+2. 编写runtest程序，并通过脚本完成自动集成到工程中
+
+### 工程目录结构
+
+```shell
+├── bootloader          # opensbi-qemu
+├── build               # 项目构建过程中的中间临时文件
+├── busybox             # busybox可以作为第一个用户程序，启动busybox sh
+├── doc                 # 相关文档
+├── fsimg               # fsimg是进行本地测试用的，sdcard.img挂载到fsimg，将相应的测试程序copy至该目录下
+│   ├── bin             # 放置user目录下编译好的用户程序，比如说 ls cat echo
+│   ├── boot            # 如果进行本地测试，makefile中runtest=0，boot/init可以作为第一个用户程序
+│   ├── mnt             # 测试程序使用
+│   └── var             # 测试程序使用
+│       └── tmp
+├── include             # 内核头文件，包含scripts/runtest.sh运行后，自动生成的initcode.h文件，子目录信息可以参加src目录说明
+│   └── syscall_gen     # 通过scripts/syscalltbl.sh脚本自动生成的头文件
+├── oscomp_user         # 该目录包含测试用例的源码，通过生成测试用例，并放置到sdcard.img中，进行本次的调试和测试
+│   ├── build           # build的中间结果
+│   ├── include         # 包含lib对应的头文件
+│   ├── lib             # 包含stdio等基础函数的实现
+│   └── src             # 包含测试用例的源程序
+│       └── oscomp
+├── scripts             # 包含makefile的共通处理，包含runtest和syscall的生成shell脚本
+├── src                 # 内核目录
+│   ├── atomic          # 原子操作
+│   ├── driver          # 设备，包含console的处理
+│   ├── fs              # 文件系统
+│   ├── ipc             # 进程通信，包含管道、信号、socket、共享内存
+│   ├── kernel          # 内核代码
+│   │   └── asm
+│   ├── lib             # 包含基础库函数
+│   ├── mm              # 内存管理
+│   ├── platform        # 平台相关
+│   │   ├── hifive
+│   │   │   └── driver
+│   │   └── qemu
+│   └── proc            # 内核和进程管理相关的逻辑
+└── user                # 用户程序，编译后放置在sdcarmd.img镜像的bin目录中，包含echo、cat等
+    ├── build           # build的中间结果
+    │   ├── lib
+    │   └── src
+    ├── include
+    ├── lib
+    └── src             # 用户程序的源程序
+```
+
+### 构建工程
+
+工程的默认目标是`all`，这个默认的目标是为了提交评测系统进行评测。
+
+```C
+all: qemu-kernel
+```
+
+通过执行`make all`或者`make`都可以实现提交评测，这个过程主要是完成内核kernel-qemu文件的生成，如果涉及到内核源码的修改，都需要重新执行`make all`或者`make kernel`，重新生成kernel-qemu。
+
+
+如果需要在本地进行模拟测试，可以执行`local`目标，这个目标完成两件事情，重新制作sdcard.img文件，并将相关的测试程序放置到sdcard.img中。另外是重新生成内核文件。
+
+```C
+local:
+	@make clean-all
+	@make image
+	@make kernel
+```
+
+通过执行`make local`可以方便实现两个阶段的工作，并通过`qemu-system-riscv64`命令启动虚拟机。另外，目标`kernel`和目标`qemu-kernel`相同，目标`image`专门负责生成sdcard.img文件。
+
+`make clean`可以清理内核相关的中间产物，`make clean-all`可以清理sdcarmd.img和内核两部分的相关中间产物。
+
+
+### 评测
+
+操作系统经过一系列相关初始化之后，会调用用户程序，比如说sh，评测的要求是操作系统启动后，自动调用评测机上的测试程序，完成后关机，整体流程如下。
 1. 通过`make`命令生成kernel-qemu内核文件
 2. 评测机会调用如下命令自动启动qemu模拟器
 
@@ -13,81 +90,12 @@ qemu-system-riscv64 -machine virt -kernel kernel-qemu -m 128M -nographic -smp 2 
 4. 根据自己内核的实现情况，在内核进入用户态后主动调用这些测试程序
 5. 调用完测试程序后，主动关机退出
 
-## 模拟评测系统的sdcard.img
-
-为了能够在本地模拟这个评测过程，我们需要自己生成sdcard.img镜像，并且将测试程序放置到镜像的根目录下
-
-```makefile
-sdcard.img:
-	@dd if=/dev/zero of=$@ bs=1M count=128
-	@mkfs.vfat -F 32 $@
-	@mount -t vfat $@ $(MNT_DIR)
-	@cp -r $(FSIMG)/* $(MNT_DIR)/
-	@sync $(MNT_DIR) && umount -v $(MNT_DIR)
-```
-
-其中，`$(FSIMG)/*`下放置的是事先编译好的测试用例程序。
-
-## 如何自动调用评测系统的测试用例
-
-操作系统内核初始化结束后，会进入用户态模式，比如说调用`sh`程序，进入交互式模式。因此我们需要完成两项主要的工作。
-
-1. 生成一个类似于shell的用户程序，我们这里命名为runtest，这个程序主要完成调用sdcard.img中测试用例
-
-```c
-char *tests[] = {
-    "brk",
-    "chdir",
-    "close",
-    "dup2",
-    "dup",
-    "execve",
-    "exit",
-    "fork",
-    "fstat",
-    "getcwd",
-    "getdents",
-    "getpid",
-    "getppid",
-    "gettimeofday",
-    "mkdir_",
-    "mmap",
-    "mount",
-    "munmap",
-    "openat",
-    "open",
-    "pipe",
-    "read",
-    "times",
-    "umount",
-    "uname",
-    "unlink",
-    "wait",
-    "waitpid",
-    "write",
-    "yield",
-    "sleep"
-};
-
-//number of testcases
-int counts = sizeof(tests) / sizeof((tests)[0]);
-
-#define CONSOLE 1
-#define AT_FDCWD -100
-char *envp[] = {"PATH=/", 0};
-
-int main(void) {
-    int pid, wpid;
-    mkdir("/dev", 0666);
-    if (openat(AT_FDCWD, "/dev/tty", O_RDWR) < 0) {
-        mknod("/dev/tty", S_IFCHR, CONSOLE << 8);
-        openat(AT_FDCWD, "/dev/tty", O_RDWR);
-    }
-    dup(0); // stdout
-    dup(0); // stderr
-    printf("\nthere are %d testcases\n\n", counts);
-
-    for (int i = 0; i < counts; i++) {
+针对以上评测的流程，我主要完成了以下工作。
+1. 编写调用测试用例的`runtest`，该测试程序的主要内容是循环调用`fork`，并在新建立的进程中，通过`execve`系统调用，调用评测机上的测试用例程序，如`brk`。
+```C
+    char* tests[] = {"brk", ....};
+    for (int i = 0; i < testCounts; i++) {
+        // 代码片段
         pid = fork();
         if (pid < 0) {
             printf("init: fork failed\n");
@@ -95,142 +103,54 @@ int main(void) {
         }
         if (pid == 0) {
             execve(tests[i], 0, envp);
-            printf("init: exec tests[i] failed\n");
             exit(1);
         }
-
-        for (;;) {
-            // this call to wait() returns if the shell exits,
-            // or if a parentless process exits.
-            wpid = wait((int *)0);
-            if (wpid == pid) {
-                break;
-            } else if (wpid < 0) {
-                printf("init: wait returned an error\n");
-                exit(1);
-            } else {
-                // it was a parentless process; do nothing.
-            }
-        }
     }
-    shutdown();
-    return 0;
-}
-
 ```
-
-2. 将runtest的十六进形式加载到操作系统内核对应的内存中，并运行。为了提高效率，将runtest生成16进制代码的过程，形成了shell脚本。
-
+2. 编译`runtest`后，通过`scripts/runtest.sh`脚本将runtest生成16进制格式的文本
 ```shell
 riscv64-linux-gnu-objcopy -S -O binary fsimg/runtest oo
 od -v -t x1 -An oo | sed -E 's/ (.{2})/0x\1,/g' > include/initcode.h
-rm oo
 ```
-
-其中`riscv64-linux-gnu-objcopy -S -O binary fsimg/runtest oo`是将gcc编译好的runtest程序，通过objcopy命令，保存符号表，并且以二进制的方式生成oo文件。`od -v -t x1 -An oo`命令将二进制文件，生成16进制，生成过程中去除地址，并且不要使用'*'来标注重复的信息。`sed -E 's/ (.{2})/0x\1,/g' > include/initcode.h`命令将每一个十六进制的数据前面添加`0x`前缀，字段间通过逗号间隔，然后将结果输出到`include/initcode.h`文件中。
-
-initcode.h代码片段如下
-
+其中，`riscv64-linux-gnu-objcopy -O binary`将文件以二进制方式输出，`-S`为去除符号表；od命令-v为不用`*`表示重复数据，`-t x1`表示输出为16机制，`-An`结果不包含地址信息；sed命令，将每一个16进制的码值前面添加`0x`标志，并且码值和码值中间通过逗号分隔。以上动作通过管道的方式最终将结果输出到`include/initcode.h`中，摘取`initcode.h`的片段如下：
 ```c
 0x5d,0x71,0xa2,0xe0,0x86,0xe4,0x26,0xfc,0x4a,0xf8,0x4e,0xf4,0x52,0xf0,0x56,0xec,
 0x5a,0xe8,0x5e,0xe4,0x62,0xe0,0x80,0x08,0x93,0x05,0x60,0x1b,0x17,0x15,0x00,0x00,
 0x13,0x05,0x45,0xdf,0x97,0x10,0x00,0x00,0xe7,0x80,0xe0,0xbb,0x09,0x46,0x97,0x15,
-0x00,0x00,0x93,0x85,0xa5,0xde,0x13,0x05,0xc0,0xf9,0x97,0x10,0x00,0x00,0xe7,0x80,
-0x80,0x84,0x63,0x44,0x05,0x10,0x01,0x45,0x97,0x10,0x00,0x00,0xe7,0x80,0xc0,0xbe,
-0x01,0x45,0x97,0x10,0x00,0x00,0xe7,0x80,0x20,0xbe,0x17,0x2a,0x00,0x00,0x13,0x0a,
-0x6a,0xfa,0x83,0x25,0x0a,0x00,0x17,0x15,0x00,0x00,0x13,0x05,0x25,0xdc,0x97,0x00,
-0x00,0x00,0xe7,0x80,0xa0,0x7b,0x83,0x27,0x0a,0x00,0x63,0x51,0xf0,0x08,0x97,0x29,
-0x00,0x00,0x93,0x89,0x29,0xf9,0x01,0x49,0x97,0x2b,0x00,0x00,0x93,0x8b,0x0b,0x08,
-0x17,0x1b,0x00,0x00,0x13,0x0b,0x0b,0xdd,0x17,0x1c,0x00,0x00,0x13,0x0c,0x0c,0xdb,
 ```
 
-这段代码通过内核初始化最后的阶段进行加载，代码如下
+3. 加载`runtest`到用户空间的页表中
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as user
+    participant B as kernel trap
+    participant C as kernel syscall(impl)
+    A->>B: syscall, e.g. read/write
+    loop trap
+        B->>B: catch syscall or exception
+    end
+    Note right of B: user thread pointer is assigned into kerner for callback
+    B->>C: call the function for syscall(t->trapframe->a0 = syscalls[num]())
+    C->>A: return from user to kernel and copy result to user space
 
-```c
-uchar initcode[] = {
-#include "initcode.h"
-};
-void runtest(void) {
-    struct proc *p;
-    struct tcb *t;
-    p = create_proc();
-    t = p->tg->group_leader;
-    initproc = p;
-    // initcode就是我们通过shell脚本生成的initcode.h文件的内容，然后通过uchar initcode数组将头文件的
-    // 文件内容加载的数组中，然后通过uvminit函数，将initcode加载到进程对象的内存管理对象上(p->mm)
-    uvminit(p->mm, initcode, sizeof(initcode));
-    t->trapframe->epc = 0;
-    t->trapframe->sp = USTACK + 5 * PGSIZE;
-    safestrcpy(p->name, "/init", 10);
-    TCB_Q_changeState(t, TCB_RUNNABLE);
-    release(&p->lock);
-    return;
-}
 ```
 
-## 如何本地运行和调试
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as kernel
+    participant B as kernel scheduler
+    participant C as kernel syscall
+    participant D as user program
+    A->A: init of fs,mm,and so no
+    A->A: ①create proc(thread) for runtest<br/>②set thread state=RUNNABLE<br/>③set register(ra)=callback function
+    A->A: load initcode into user pagetable
+    B->B: ①get RUNNALBE thread from queue<br/>②switch context，save current thread data and switch to context of new thread
 
-### 本地运行
-
-本地运行依赖于交叉编译环境，qemu仿真环境命令，可以选择自行安装，也可以选择使用大赛的镜像容器。
-
-1. 自行安装
-
-```shell
-https://github.com/riscv-collab/riscv-gnu-toolchain
 ```
 
-因为编译交叉编译工具链耗时很长，也可以选择使用编译好的制品。
-
-```shell
-https://github.com/riscv-collab/riscv-gnu-toolchain/tags
-```
-
-在构建好本地的交叉编译工具链之后，安装qemu
-
-```shell
-apt install qemu-system-riscv64
-```
-
-2. 使用大赛的镜像
-
-```shell
-docker pull alphamj/os-contest:v7.7
-```
-
-3. makefile
-
-makefile中的local目标包含了本地运行的所有依赖，通过运行`make local`可以实现重新生成sdcard.img和对应的测试用例，以及操作系统内核文件kernel-qemu
-
-```shell
-local:
-	@make clean-all
-	@make image
-	@make kernel
-```
-
-其中 `make clean-all`会删除sdcard.img和相应的依赖，同时会删除kerenl-qemu和对应的依赖，如果只想删除kernel-qemu和对应的依赖，可以使用`make clean`命令。`make image`命令会编译生成sdcard.img，并将对应的测试用例放置到sdcard.img中，`make kernel`会生成kernel-qemu文件，也就是内核文件，同时利用qemu命令运行生成的内核文件。
-
-对于提交评测的流程，因为评测机已经存在sdcard.img，因此，不需要再次生成，只需要编译好操作系统内核文件即可。我们把默认的目标设置为`make all`。
-
-```shell
-.DEFAULT_GOAL = all
-
-all: kernel-qemu
-```
-
-4. runtest如何使用
-
-在makefile中，有一个目标是`runtest`，这个目标的主要作用是根据`runtest.c`文件的变化，重新生成`initcode.h`文件。
-
-```shell
-runtest: image
-	@./scripts/runtest.sh
-```
-
-因为runtest目标依赖于image，也就是当修改了`runtest.c`文件时，我们需要单独执行`make runtest`命令，这样会生成新的sdcard.img文件，同时也会利用`runtest.sh`脚本自动生成`initcode.h`文件，为后续的`make kernel`做好准备工作。
-
-5. 如何调试
+## 如何调试
 
 安装依赖库
 
@@ -254,3 +174,7 @@ Remote debugging using :25000
 ```
 
 其中`25000`是启动qemu的时候gdb的参数，根据第一个启动内核窗口的日志决定`25000`具体是多少。通过以上步骤，就可以进行内核代码的调试工作。
+
+## 内核运行效果
+
+![cray-run](img/cray.png)

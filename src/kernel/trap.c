@@ -232,9 +232,6 @@ void thread_usertrapret() {
     intr_off();
     p->stub_time = rdtime();
 
-    // p->last_out = rdtime();
-    // p->stime += rdtime() - p->last_in;
-
     // send syscalls, interrupts, and exceptions to uservec in trampoline.S
     uint64 trampoline_uservec = TRAMPOLINE + (uservec - trampoline);
     w_stvec(trampoline_uservec);
@@ -247,17 +244,9 @@ void thread_usertrapret() {
     t->trapframe->kernel_trap = (uint64)thread_usertrap;
     t->trapframe->hartid = r_tp(); // hartid for cpuid()
 
-    // trapframe_print(t->trapframe);// debug
-
-    // if (print_tf_flag) {
-    //     printf("%d\n", p->pid);
-    //     trapframe_print(t->trapframe);
-    //     print_tf_flag = 0;
-    // }
 
     // set up the registers that trampoline.S's sret will use
     // to get to user space.
-
     // set S Previous Privilege mode to User.
     unsigned long x = r_sstatus();
     x &= ~SSTATUS_SPP; // clear SPP to 0 for user mode
