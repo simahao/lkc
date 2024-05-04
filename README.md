@@ -112,42 +112,38 @@ qemu-system-riscv64 -machine virt -kernel kernel-qemu -m 128M -nographic -smp 2 
 riscv64-linux-gnu-objcopy -S -O binary fsimg/runtest oo
 od -v -t x1 -An oo | sed -E 's/ (.{2})/0x\1,/g' > include/initcode.h
 ```
-其中，`riscv64-linux-gnu-objcopy -O binary`将文件以二进制方式输出，`-S`为去除符号表；od命令-v为不用`*`表示重复数据，`-t x1`表示输出为16机制，`-An`结果不包含地址信息；sed命令，将每一个16进制的码值前面添加`0x`标志，并且码值和码值中间通过逗号分隔。以上动作通过管道的方式最终将结果输出到`include/initcode.h`中，摘取`initcode.h`的片段如下：
+其中，`riscv64-linux-gnu-objcopy -O binary`将文件以二进制方式输出，`-S`为去除符号表；od命令`-v`为不用`*`表示重复数据，`-t x1`表示输出为16机制，`-An`结果不包含地址信息；sed命令，将每一个16进制的码值前面添加`0x`标志，并且码值和码值中间通过逗号分隔。以上动作通过管道的方式最终将结果输出到`include/initcode.h`中，摘取`initcode.h`的片段如下：
 ```c
 0x5d,0x71,0xa2,0xe0,0x86,0xe4,0x26,0xfc,0x4a,0xf8,0x4e,0xf4,0x52,0xf0,0x56,0xec,
 0x5a,0xe8,0x5e,0xe4,0x62,0xe0,0x80,0x08,0x93,0x05,0x60,0x1b,0x17,0x15,0x00,0x00,
 0x13,0x05,0x45,0xdf,0x97,0x10,0x00,0x00,0xe7,0x80,0xe0,0xbb,0x09,0x46,0x97,0x15,
 ```
 
-3. 加载`runtest`到用户空间的页表中
-```mermaid
-sequenceDiagram
-    autonumber
-    participant A as user
-    participant B as kernel trap
-    participant C as kernel syscall(impl)
-    A->>B: syscall, e.g. read/write
-    loop trap
-        B->>B: catch syscall or exception
-    end
-    Note right of B: user thread pointer is assigned into kerner for callback
-    B->>C: call the function for syscall(t->trapframe->a0 = syscalls[num]())
-    C->>A: return from user to kernel and copy result to user space
-
-```
+3. 加载`runtest`到用户空间的页表中，并运行runtest
 
 ```mermaid
 sequenceDiagram
     autonumber
     participant A as kernel
     participant B as kernel scheduler
-    participant C as kernel syscall
+    participant C as kernel syscall implement
     participant D as user program
-    A->A: init of fs,mm,and so no
-    A->A: ①create proc(thread) for runtest<br/>②set thread state=RUNNABLE<br/>③set register(ra)=callback function
-    A->A: load initcode into user pagetable
-    B->B: ①get RUNNALBE thread from queue<br/>②switch context，save current thread data and switch to context of new thread
+    critical init
+        A->>A: ①init of filesystem<br/>②init of memory management<br/>③init of others
+    end
+    critical prepare for calling runtest
+        A->A: ①create proc(thread) for runtest<br/>②set thread state=RUNNABLE<br/>③set register(ra)=callback function<br/>④load runtest(initcode.h) into user pagetable
+    end
+    loop kernel scheduler
+        B->B: ①get RUNNALBE thread from queue<br/>②switch thread context<br/>③set thread state=RUNNING
+    end
+    B->>D: call test case, e.g. brk
+    Note right of A: test program is stored in sdcard.img
 
+    D->>C: system call
+    critical implement ecall
+        C->>C: ①execute system call<br/>②result of syscall is saved in register(A0)<br/>③testcase get result from register(A0)
+    end
 ```
 
 ## 如何调试
