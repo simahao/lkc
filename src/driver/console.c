@@ -78,14 +78,18 @@ struct console {
 //
 int consolewrite(int user_src, uint64 src, int n) {
     int i;
-
+    acquire(&cons.lock);
+    Info("lock=%d\n", cons.lock.locked);
     for (i = 0; i < n; i++) {
         char c;
         if (either_copyin(&c, user_src, src + i, 1) == -1)
             break;
+        // consputc(c);
         uartputc(c);
+        // printf("%c", 'a');
     }
-
+    release(&cons.lock);
+    Info("lock=%d\n", cons.lock.locked);
     return i;
 }
 
@@ -111,9 +115,9 @@ int consoleread(int user_dst, uint64 dst, int n) {
                 release(&cons.lock);
                 return -1;
             }
-            release(&cons.lock);
+            // release(&cons.lock);
             sema_wait(&cons.sem_r);
-            acquire(&cons.lock);
+            // acquire(&cons.lock);
         }
 
         c = cons.buf[cons.r++ % INPUT_BUF_SIZE];

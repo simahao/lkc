@@ -289,19 +289,11 @@ int do_clone(uint64 flags, vaddr_t stack, uint64 ptid, uint64 tls, uint64 ctid) 
     struct proc *np = NULL;
     struct tcb *t = NULL;
 
-    // extern int print_tf_flag;
-    // print_tf_flag = 1;
-    // print_clone_flags(flags);
-    // #ifdef __STRACE__
-    //     print_clone_flags(flags);
-    // #endif
     // print_clone_flags(flags);
     if (flags & CLONE_THREAD) {
         if ((t = alloc_thread(thread_forkret)) == 0) {
             return -1;
         }
-        // extern int print_tf_flag;
-        // print_tf_flag = 1;
         if (proc_join_thread(p, t, NULL) < 0) {
             free_thread(t);
         }
@@ -311,17 +303,14 @@ int do_clone(uint64 flags, vaddr_t stack, uint64 ptid, uint64 tls, uint64 ctid) 
     } else {
         // Allocate process.
         if ((np = create_proc()) == 0) {
-            // proc_thread_print();
             return -1;
         }
         t = np->tg->group_leader; // !!!
     }
 
-    // print_clone_flags(flags);
     // ==============create thread for proc=======================
     // copy saved user registers.
     *(t->trapframe) = *(p->tg->group_leader->trapframe);
-    // Log("%x", t->trapframe->epc);
 
     // Cause fork to return 0 in the child.
     t->trapframe->a0 = 0;
@@ -399,15 +388,7 @@ int do_clone(uint64 flags, vaddr_t stack, uint64 ptid, uint64 tls, uint64 ctid) 
             if (p->ofile[i])
                 // np->ofile[i] = fat32_filedup(p->ofile[i]);
                 np->ofile[i] = p->ofile[i]->f_op->dup(p->ofile[i]);
-        // else
-        //     break;// to speed up?
-        // TODO : clone a completely same fdtable   >> not necessary
     }
-
-    // if (flags & CLONE_NEWIPC) {
-    // } else {
-    //     np->ipc_ns = p->ipc_ns;
-    // }
 
     // TODO : vfs inode cmd  >> Done
     np->cwd = p->cwd->i_op->idup(p->cwd);

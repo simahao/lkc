@@ -51,13 +51,13 @@ pid_t clone(int (*fn)(void), void *arg, void *stack, size_t stack_size, unsigned
 {
     if (stack)
         stack += stack_size;
-    pid_t ret = syscall(SYS_clone, flags, 0);
-    if (ret == 0) {
-        return fn();
-    } else {
-        return ret;
-    }
-    // return __clone(fn, stack, flags, NULL, NULL, NULL);
+    // pid_t ret = syscall(SYS_clone, flags, 0);
+    // if (ret == 0) {
+    //     return fn();
+    // } else {
+    //     return ret;
+    // }
+    return __clone(fn, stack, flags, NULL, NULL, NULL);
     // return syscall(SYS_clone, fn, stack, flags, NULL, NULL, NULL);
 }
 void exit(int code)
